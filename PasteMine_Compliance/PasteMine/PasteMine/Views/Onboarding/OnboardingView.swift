@@ -23,86 +23,92 @@ struct OnboardingView: View {
                 Color(NSColor.windowBackgroundColor)
             }
 
-            VStack(spacing: 0) {
-                // 标题区域
-                VStack(spacing: 8) {
-                    Image(systemName: "hand.wave.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.blue)
-                        .padding(.top, 32)
+            ScrollView {
+                VStack(spacing: 0) {
+                    // 标题区域
+                    VStack(spacing: 8) {
+                        Image(systemName: "hand.wave.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.blue)
+                            .padding(.top, 32)
 
-                    Text("欢迎使用 PasteMine")
-                        .font(.title)
-                        .fontWeight(.bold)
+                        Text("欢迎使用 PasteMine")
+                            .font(.title)
+                            .fontWeight(.bold)
 
-                    Text("一款优雅的剪贴板历史管理工具")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.bottom, 32)
-
-                // 步骤内容
-                VStack(spacing: 20) {
-                    if currentStep == 0 {
-                        // 步骤 1: 通知权限
-                        PermissionStepView(
-                            icon: "bell.fill",
-                            iconColor: .blue,
-                            title: "开启通知",
-                            description: "接收剪贴板复制和粘贴提醒",
-                            isGranted: $notificationPermissionGranted,
-                            primaryButtonTitle: "授予权限",
-                            primaryAction: {
-                                requestNotificationPermission()
-                            },
-                            secondaryButtonTitle: "稍后设置",
-                            secondaryAction: {
-                                currentStep = 1
-                            }
-                        )
-                    } else if currentStep == 1 {
-                        // 步骤 2: 辅助功能权限
-                        PermissionStepView(
-                            icon: "hand.point.up.left.fill",
-                            iconColor: .green,
-                            title: "开启辅助功能",
-                            description: "允许 PasteMine 实现自动粘贴功能",
-                            isGranted: $accessibilityPermissionGranted,
-                            primaryButtonTitle: "打开系统设置",
-                            primaryAction: {
-                                openAccessibilitySettings()
-                            },
-                            secondaryButtonTitle: "稍后设置",
-                            secondaryAction: {
-                                currentStep = 2
-                            }
-                        )
-                    } else {
-                        // 步骤 3: 完成
-                        CompletionStepView(
-                            notificationGranted: notificationPermissionGranted,
-                            accessibilityGranted: accessibilityPermissionGranted,
-                            onComplete: {
-                                completeOnboarding()
-                            }
-                        )
+                        Text("一款优雅的剪贴板历史管理工具")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
-                }
-                .frame(height: 400)
-                .animation(.easeInOut, value: currentStep)
+                    .padding(.bottom, 32)
 
-                // 底部指示器
-                HStack(spacing: 8) {
-                    ForEach(0..<3) { index in
-                        Circle()
-                            .fill(currentStep == index ? Color.blue : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
+                    // 步骤内容
+                    VStack(spacing: 20) {
+                        if currentStep == 0 {
+                            // 步骤 1: 通知权限
+                            PermissionStepView(
+                                icon: "bell.fill",
+                                iconColor: .blue,
+                                title: "开启通知",
+                                description: "接收剪贴板复制和粘贴提醒",
+                                isGranted: $notificationPermissionGranted,
+                                primaryButtonTitle: "授予权限",
+                                primaryAction: {
+                                    requestNotificationPermission()
+                                },
+                                secondaryButtonTitle: "稍后设置",
+                                secondaryAction: {
+                                    currentStep = 1
+                                }
+                            )
+                        } else if currentStep == 1 {
+                            // 步骤 2: 辅助功能权限
+                            PermissionStepView(
+                                icon: "hand.point.up.left.fill",
+                                iconColor: .green,
+                                title: "开启辅助功能",
+                                description: "允许 PasteMine 实现自动粘贴功能",
+                                isGranted: $accessibilityPermissionGranted,
+                                primaryButtonTitle: "打开系统设置",
+                                primaryAction: {
+                                    openAccessibilitySettings()
+                                },
+                                secondaryButtonTitle: "稍后设置",
+                                secondaryAction: {
+                                    currentStep = 2
+                                }
+                            )
+                        } else {
+                            // 步骤 3: 完成
+                            CompletionStepView(
+                                notificationGranted: notificationPermissionGranted,
+                                accessibilityGranted: accessibilityPermissionGranted,
+                                onComplete: {
+                                    completeOnboarding()
+                                }
+                            )
+                        }
                     }
+                    .frame(minHeight: 380)
+                    .animation(.easeInOut, value: currentStep)
+
+                    // 底部指示器
+                    HStack(spacing: 8) {
+                        ForEach(0..<3) { index in
+                            Circle()
+                                .fill(currentStep == index ? Color.blue : Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                        }
+                    }
+                    .padding(.top, 24)
+                    .padding(.bottom, 32)
                 }
-                .padding(.bottom, 24)
+                .padding(.horizontal, 32)
+                .frame(maxWidth: 520)
             }
+            .frame(maxWidth: .infinity)
         }
-        .frame(width: 500, height: 480)
+        .frame(width: 520, height: 600)
         .onAppear {
             checkPermissions()
         }
@@ -194,8 +200,6 @@ struct PermissionStepView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Spacer()
-
             // 图标
             ZStack {
                 Circle()
@@ -206,6 +210,7 @@ struct PermissionStepView: View {
                     .font(.system(size: 56))
                     .foregroundStyle(iconColor)
             }
+            .padding(.top, 20)
 
             // 文本
             VStack(spacing: 8) {
@@ -217,7 +222,7 @@ struct PermissionStepView: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 48)
+                    .padding(.horizontal, 32)
             }
 
             // 状态指示
@@ -233,6 +238,7 @@ struct PermissionStepView: View {
             }
 
             Spacer()
+                .frame(height: 40)
 
             // 按钮
             VStack(spacing: 12) {
@@ -256,8 +262,10 @@ struct PermissionStepView: View {
                         .cornerRadius(8)
                 }
             }
-            .padding(.horizontal, 48)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 20)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -269,8 +277,6 @@ struct CompletionStepView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Spacer()
-
             // 成功图标
             ZStack {
                 Circle()
@@ -281,6 +287,7 @@ struct CompletionStepView: View {
                     .font(.system(size: 56))
                     .foregroundStyle(.green)
             }
+            .padding(.top, 20)
 
             // 标题
             VStack(spacing: 8) {
@@ -317,7 +324,7 @@ struct CompletionStepView: View {
                         .fill(Color(NSColor.controlBackgroundColor))
                 }
             }
-            .padding(.horizontal, 48)
+            .padding(.horizontal, 32)
             .padding(.top, 16)
 
             if !notificationGranted || !accessibilityGranted {
@@ -328,6 +335,7 @@ struct CompletionStepView: View {
             }
 
             Spacer()
+                .frame(height: 40)
 
             // 完成按钮
             Button(action: onComplete) {
@@ -338,8 +346,10 @@ struct CompletionStepView: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
             }
-            .padding(.horizontal, 48)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 20)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
