@@ -22,19 +22,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // 设置全局访问点
         AppDelegate.shared = self
 
-        // 设置通知中心代理
+        // 设置通知中心代理（必须在请求权限之前设置）
         UNUserNotificationCenter.current().delegate = self
-
-        // 检查是否是首次启动
-        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
-
-        if !hasCompletedOnboarding {
-            // 首次启动，显示引导界面
-            showOnboarding()
-        } else {
-            // 非首次启动，请求通知权限（如果还没授权的话）
-            NotificationService.shared.requestPermission()
-        }
 
         // 同步开机自启动状态
         let settings = AppSettings.load()
@@ -42,7 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 
         // 隐藏 Dock 图标（已在 Info.plist 设置 LSUIElement）
 
-        // 初始化窗口管理器
+        // ⚠️ 先初始化窗口管理器和托盘图标，确保应用有可见的 UI
         windowManager = WindowManager()
 
         // 配置 PasteService
@@ -57,13 +46,39 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 
         // 启动剪贴板监听
         clipboardMonitor.start()
+        
+        // 检查是否是首次启动（在其他初始化完成后进行）
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+
+        if !hasCompletedOnboarding {
+            // 首次启动，显示引导界面
+            print("🆕 首次启动，显示引导界面")
+            showOnboarding()
+        } else {
+            // 非首次启动，请求通知权限（如果还没授权的话）
+            print("✅ 非首次启动，检查通知权限")
+
+            // ⚠️ 关键修改：确保应用激活后再请求权限
+            NSApp.activate(ignoringOtherApps: true)
+
+            // 延迟一小段时间，确保应用和托盘图标已完全初始化
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                NotificationService.shared.requestPermission()
+            }
+        }
     }
     
     func applicationWillTerminate(_ notification: Notification) {
         clipboardMonitor.stop()
         hotKeyManager?.unregister()
     }
-    
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // 对于 LSUIElement = true 的应用，关闭最后一个窗口不应该终止应用
+        // 因为托盘图标应该继续存在
+        return false
+    }
+
     // MARK: - 托盘图标设置
     
     private func setupStatusBar() {

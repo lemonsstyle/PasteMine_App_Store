@@ -22,7 +22,9 @@ class NotificationService {
     private let minPermissionWarningInterval: TimeInterval = 2.0
     
     private init() {
-        requestPermission()
+        // 不在 init 中自动请求权限
+        // 权限请求应该在引导界面或应用完全初始化后进行
+        // 这样可以确保应用处于激活状态，系统弹窗能正常显示
     }
     
     /// 请求通知权限

@@ -103,13 +103,58 @@ struct OnboardingView: View {
     }
 
     private func requestNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            DispatchQueue.main.async {
-                notificationPermissionGranted = granted
-                if granted {
-                    // 自动进入下一步
-                    withAnimation {
-                        currentStep = 1
+        print("🔔 正在请求通知权限...")
+
+        // ⚠️ 关键修改：确保应用处于激活状态，这样系统弹窗才能正常显示
+        NSApp.activate(ignoringOtherApps: true)
+
+        // 短暂延迟，确保应用激活完成
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // 先检查当前权限状态
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                print("📊 当前通知权限状态: \(settings.authorizationStatus.rawValue)")
+
+                if settings.authorizationStatus == .notDetermined {
+                    // 首次请求权限，会弹出系统对话框
+                    print("🔔 首次请求，将弹出系统对话框...")
+
+                    // ⚠️ 再次确保应用激活（关键：LSUIElement=true 应用需要）
+                    NSApp.activate(ignoringOtherApps: true)
+
+                    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                        DispatchQueue.main.async {
+                            if let error = error {
+                                print("❌ 请求通知权限失败: \(error.localizedDescription)")
+                            } else {
+                                print("✅ 通知权限请求结果: \(granted ? "已授权" : "已拒绝")")
+                            }
+                            self.notificationPermissionGranted = granted
+                            if granted {
+                                // 自动进入下一步
+                                withAnimation {
+                                    self.currentStep = 1
+                                }
+                            }
+                        }
+                    }
+                } else if settings.authorizationStatus == .authorized {
+                    // 已经授权
+                    DispatchQueue.main.async {
+                        print("✅ 通知权限已经授权")
+                        self.notificationPermissionGranted = true
+                        withAnimation {
+                            self.currentStep = 1
+                        }
+                    }
+                } else if settings.authorizationStatus == .denied {
+                    // 已经拒绝，引导用户去系统设置开启
+                    DispatchQueue.main.async {
+                        print("⚠️ 通知权限已被拒绝，需要手动开启")
+                        self.notificationPermissionGranted = false
+                        // 打开系统通知设置
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+                            NSWorkspace.shared.open(url)
+                        }
                     }
                 }
             }
@@ -164,12 +209,30 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
+        print("🎉 正在完成引导...")
+
         // 标记已完成引导
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
-        // 关闭引导窗口
+        // 确保 NotificationService 已初始化（刷新权限状态）
+        NotificationService.shared.refreshAuthorizationStatus()
+
+        // ⚠️ 重要：先显示主窗口，再关闭引导窗口
+        // 这样可以避免应用因为没有可见窗口而被系统终止（LSUIElement = true 时）
+
+        // 1. 先显示主窗口
+        AppDelegate.shared?.windowManager?.show()
+        print("✅ 主窗口已显示")
+
+        // 2. 确保应用激活
+        NSApp.activate(ignoringOtherApps: true)
+
+        // 3. 短暂延迟后关闭引导窗口，确保主窗口已经完全显示
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             if let window = NSApp.windows.first(where: { $0.title == "欢迎使用 PasteMine" }) {
                 window.close()
+                print("✅ 引导窗口已关闭")
+            }
         }
     }
 }
@@ -179,6 +242,7 @@ struct NotificationPermissionStepView: View {
     @Binding var isGranted: Bool
     let primaryAction: () -> Void
     let secondaryAction: () -> Void
+    @State private var isDenied = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -263,6 +327,21 @@ struct NotificationPermissionStepView: View {
                         .fontWeight(.medium)
                 }
                 .padding(.top, 4)
+            } else if isDenied {
+                // 已拒绝提示
+                VStack(spacing: 6) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.orange)
+                        Text("权限已被拒绝")
+                            .foregroundStyle(.orange)
+                            .fontWeight(.medium)
+                    }
+                    Text("请在系统设置中手动开启")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 4)
             }
 
             Spacer()
@@ -271,8 +350,17 @@ struct NotificationPermissionStepView: View {
             // 按钮
             VStack(spacing: 12) {
                 if !isGranted {
-                    Button(action: primaryAction) {
-                        Text("授予权限")
+                    Button(action: {
+                        if isDenied {
+                            // 已拒绝，打开系统设置
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } else {
+                            primaryAction()
+                        }
+                    }) {
+                        Text(isDenied ? "打开系统设置" : "授予权限")
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Color.accentColor)
@@ -296,6 +384,15 @@ struct NotificationPermissionStepView: View {
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
+        .onAppear {
+            // 检查权限状态
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                DispatchQueue.main.async {
+                    isDenied = settings.authorizationStatus == .denied
+                    isGranted = settings.authorizationStatus == .authorized
+                }
+            }
+        }
     }
 }
 

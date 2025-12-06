@@ -22,7 +22,7 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
-	<key>NSUserNotificationUsageDescription</key>
+	<key>NSUserNotificationsUsageDescription</key>
 	<string>需要通知权限来提醒您复制和粘贴内容</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>当您从剪贴板历史中选择记录并执行自动粘贴时，PasteMine 会向前台应用发送一次 Cmd+V Apple Event 以完成粘贴操作。</string>
