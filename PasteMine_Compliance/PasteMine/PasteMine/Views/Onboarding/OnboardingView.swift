@@ -217,11 +217,13 @@ struct OnboardingView: View {
         // 确保 NotificationService 已初始化（刷新权限状态）
         NotificationService.shared.refreshAuthorizationStatus()
 
-        // ⚠️ 关键改进：确保隐藏窗口被激活，维持应用生命周期
+        // ⚠️ 关键改进：确保隐藏窗口存在，维持应用生命周期
         // 对于 LSUIElement=true 的应用，需要至少一个活动的 Window 场景
-        if let hiddenWindow = NSApp.windows.first(where: { $0.title == "_Hidden" }) {
-            print("✅ 找到隐藏窗口，确保其存在")
-            hiddenWindow.orderBack(nil)  // 放到最后面，但保持存在
+        if let hiddenWindow = NSApp.windows.first(where: { $0.identifier?.rawValue == "hidden-window" }) {
+            print("✅ 找到隐藏窗口：\(hiddenWindow)")
+            // 隐藏窗口已在屏幕外，无需额外操作
+        } else {
+            print("⚠️ 警告：未找到隐藏窗口")
         }
 
         print("✅ 引导完成，托盘图标已可用")
