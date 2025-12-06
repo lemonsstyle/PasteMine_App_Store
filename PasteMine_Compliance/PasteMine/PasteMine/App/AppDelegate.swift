@@ -17,6 +17,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     var hotKeyManager: HotKeyManager?
     var windowManager: WindowManager?
     var onboardingWindow: NSWindow?
+
+    // ⚠️ 添加标志：用户是否真的想退出
+    private var isQuitting = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 设置全局访问点
@@ -80,15 +83,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // ⚠️ 额外的安全网：防止应用意外终止
-        // 只有在用户明确选择"退出"时才允许终止
         print("⚠️ applicationShouldTerminate 被调用")
 
-        // 检查是否是用户主动退出（通过菜单或 Cmd+Q）
-        // 如果有托盘图标，应该只通过托盘菜单退出
+        // 如果是用户主动退出，允许终止
+        if isQuitting {
+            print("✅ 用户主动退出，允许终止")
+            return .terminateNow
+        }
+
+        // 否则阻止意外终止
         if statusItem != nil {
-            print("✅ 托盘图标存在，应用应该继续运行")
-            return .terminateCancel  // 取消终止
+            print("✅ 托盘图标存在，阻止意外终止")
+            return .terminateCancel
         }
 
         return .terminateNow
@@ -137,6 +143,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
     
     @objc private func quit() {
+        print("🚪 用户请求退出应用")
+
+        // 设置退出标志
+        isQuitting = true
+
         // 检查是否需要清空历史记录
         let settings = AppSettings.load()
         if settings.clearOnQuit {
@@ -147,7 +158,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
                 print("❌ 清空历史记录失败: \(error)")
             }
         }
-        
+
         NSApplication.shared.terminate(nil)
     }
     
@@ -171,11 +182,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     // MARK: - 引导界面
 
     private func showOnboarding() {
+        // ⚠️ 移除 onDisappear 闭包，避免窗口关闭时的内存管理问题
+        // 权限请求已在 completeOnboarding 后通过其他方式处理
         let onboardingView = OnboardingView()
-            .onDisappear {
-                // 引导完成后，确保请求了必要的权限
-                NotificationService.shared.requestPermission()
-            }
 
         let hostingController = NSHostingController(rootView: onboardingView)
 
@@ -185,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
             backing: .buffered,
             defer: false
         )
-        
+
         onboardingWindow?.setContentSize(NSSize(width: 540, height: 680))
 
         onboardingWindow?.center()
@@ -195,13 +204,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         onboardingWindow?.isMovableByWindowBackground = true
         onboardingWindow?.level = .floating
 
+        // ⚠️ 关键：确保窗口不会在关闭时立即释放
+        onboardingWindow?.isReleasedWhenClosed = false
+
         // 监听窗口关闭
         NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
             object: onboardingWindow,
             queue: .main
         ) { [weak self] _ in
-            self?.onboardingWindow = nil
+            print("🔔 引导窗口即将关闭")
+            // 延迟清理，避免立即释放导致崩溃
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self?.onboardingWindow = nil
+                print("✅ 引导窗口已清理")
+            }
         }
 
         onboardingWindow?.makeKeyAndOrderFront(nil)
