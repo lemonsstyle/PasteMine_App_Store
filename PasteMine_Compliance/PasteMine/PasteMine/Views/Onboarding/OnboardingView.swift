@@ -217,21 +217,34 @@ struct OnboardingView: View {
         // 确保 NotificationService 已初始化（刷新权限状态）
         NotificationService.shared.refreshAuthorizationStatus()
 
-        // ⚠️ 重要改进：不立即显示主窗口，避免自动隐藏导致的问题
-        // 用户可以通过托盘图标或快捷键（⌘⇧V）打开主窗口
+        // ⚠️ 关键改进：确保隐藏窗口被激活，维持应用生命周期
+        // 对于 LSUIElement=true 的应用，需要至少一个活动的 Window 场景
+        if let hiddenWindow = NSApp.windows.first(where: { $0.title == "_Hidden" }) {
+            print("✅ 找到隐藏窗口，确保其存在")
+            hiddenWindow.orderBack(nil)  // 放到最后面，但保持存在
+        }
 
         print("✅ 引导完成，托盘图标已可用")
         print("💡 提示：点击右上角托盘图标或按 ⌘⇧V 打开剪贴板历史")
 
-        // 延迟后关闭引导窗口，确保应用有足够时间稳定
+        // 延迟后关闭引导窗口
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if let window = NSApp.windows.first(where: { $0.title == "欢迎使用 PasteMine" }) {
                 window.close()
                 print("✅ 引导窗口已关闭")
             }
 
-            // 确保应用保持激活状态，避免立即被自动终止
+            // 确保应用保持激活状态
             NSApp.activate(ignoringOtherApps: true)
+
+            // 额外的安全措施：延迟后再次检查应用状态
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if !NSApp.isActive {
+                    print("⚠️ 应用未激活，重新激活")
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+                print("✅ 应用状态检查完成")
+            }
         }
     }
 }

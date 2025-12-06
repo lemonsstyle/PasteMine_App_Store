@@ -79,6 +79,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         return false
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // ⚠️ 额外的安全网：防止应用意外终止
+        // 只有在用户明确选择"退出"时才允许终止
+        print("⚠️ applicationShouldTerminate 被调用")
+
+        // 检查是否是用户主动退出（通过菜单或 Cmd+Q）
+        // 如果有托盘图标，应该只通过托盘菜单退出
+        if statusItem != nil {
+            print("✅ 托盘图标存在，应用应该继续运行")
+            return .terminateCancel  // 取消终止
+        }
+
+        return .terminateNow
+    }
+
+
     // MARK: - 托盘图标设置
     
     private func setupStatusBar() {
