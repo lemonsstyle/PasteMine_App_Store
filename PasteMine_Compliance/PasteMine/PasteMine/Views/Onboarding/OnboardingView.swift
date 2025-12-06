@@ -217,22 +217,21 @@ struct OnboardingView: View {
         // 确保 NotificationService 已初始化（刷新权限状态）
         NotificationService.shared.refreshAuthorizationStatus()
 
-        // ⚠️ 重要：先显示主窗口，再关闭引导窗口
-        // 这样可以避免应用因为没有可见窗口而被系统终止（LSUIElement = true 时）
+        // ⚠️ 重要改进：不立即显示主窗口，避免自动隐藏导致的问题
+        // 用户可以通过托盘图标或快捷键（⌘⇧V）打开主窗口
 
-        // 1. 先显示主窗口
-        AppDelegate.shared?.windowManager?.show()
-        print("✅ 主窗口已显示")
+        print("✅ 引导完成，托盘图标已可用")
+        print("💡 提示：点击右上角托盘图标或按 ⌘⇧V 打开剪贴板历史")
 
-        // 2. 确保应用激活
-        NSApp.activate(ignoringOtherApps: true)
-
-        // 3. 短暂延迟后关闭引导窗口，确保主窗口已经完全显示
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        // 延迟后关闭引导窗口，确保应用有足够时间稳定
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if let window = NSApp.windows.first(where: { $0.title == "欢迎使用 PasteMine" }) {
                 window.close()
                 print("✅ 引导窗口已关闭")
             }
+
+            // 确保应用保持激活状态，避免立即被自动终止
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }
