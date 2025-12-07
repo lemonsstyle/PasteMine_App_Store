@@ -31,7 +31,7 @@ class WindowManager: NSObject {
             defer: false
         )
 
-        window?.title = "剪贴板历史"
+        window?.title = AppText.MainWindow.windowTitle
         window?.contentView = NSHostingView(rootView: contentView)
         window?.isReleasedWhenClosed = false
         window?.level = .floating  // 窗口置顶
@@ -50,12 +50,12 @@ class WindowManager: NSObject {
         // 设置代理以监听窗口事件
         window?.delegate = self
         
-        print("✅ 窗口已创建")
+        print("✅ Window created")
     }
     
     /// 显示窗口
     func show() {
-        // 记录当前活跃应用
+        // Record current active app
         previousApp = NSWorkspace.shared.frontmostApplication
         
         // 计算窗口位置（跟随鼠标）
@@ -72,7 +72,7 @@ class WindowManager: NSObject {
             NotificationCenter.default.post(name: .scrollToTop, object: nil)
         }
         
-        print("👁️  窗口已显示在鼠标附近，已滚动到顶部")
+        print("👁️  Window shown near cursor and scrolled to top")
     }
     
     /// 隐藏窗口

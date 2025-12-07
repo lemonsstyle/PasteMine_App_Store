@@ -79,11 +79,10 @@ struct HistoryListView: View {
                 if $0.itemType == .text {
                     return ($0.content ?? "").localizedCaseInsensitiveContains(searchText)
                 }
-                // 图片：搜索来源应用或"图片"关键字
+                // 图片：搜索来源应用或 "image" 关键字
                 else if $0.itemType == .image {
                     let appMatch = ($0.appSource ?? "").localizedCaseInsensitiveContains(searchText)
-                    let keywordMatch = "图片".localizedCaseInsensitiveContains(searchText) ||
-                                       "image".localizedCaseInsensitiveContains(searchText)
+                    let keywordMatch = "image".localizedCaseInsensitiveContains(searchText)
                     return appMatch || keywordMatch
                 }
                 return false
@@ -118,9 +117,9 @@ struct HistoryListView: View {
             
             if !hasAccessibilityPermission {
                 PermissionBannerView(
-                    title: "未授予辅助功能权限",
-                    message: "自动粘贴将降级为仅复制。前往“系统设置 > 隐私与安全 > 辅助功能”开启权限即可恢复。",
-                    actionTitle: "前往设置",
+                    title: L10n.text("未授予辅助功能权限", "Accessibility permission not granted"),
+                    message: L10n.text("自动粘贴将降级为仅复制。前往“系统设置 > 隐私与安全 > 辅助功能”开启权限即可恢复。", "Auto-paste will fall back to copy only. Go to System Settings > Privacy & Security > Accessibility to enable."),
+                    actionTitle: L10n.text("前往设置", "Open Settings"),
                     action: openAccessibilitySettings
                 )
                 .padding(.horizontal, 14)
@@ -129,7 +128,7 @@ struct HistoryListView: View {
 
             // 列表
             if filteredItems.isEmpty {
-                EmptyStateView(message: searchText.isEmpty ? "暂无剪贴板历史" : "没有找到匹配的记录")
+                EmptyStateView(message: searchText.isEmpty ? AppText.MainWindow.emptyStateTitle : L10n.text("没有找到匹配的记录", "No matching records"))
             } else {
                 ScrollViewReader { proxy in
                     List {
@@ -152,10 +151,10 @@ struct HistoryListView: View {
                                     pasteItem(item)
                                 }
                                 .contextMenu {
-                                    Button(item.isPinned ? "取消固定" : "固定") {
+                                    Button(item.isPinned ? L10n.text("取消固定", "Unpin") : L10n.text("固定", "Pin")) {
                                         togglePin(item)
                                     }
-                                    Button("删除") {
+                                    Button(AppText.Common.delete) {
                                         deleteItem(item)
                                     }
                                 }
@@ -262,7 +261,7 @@ struct HistoryListView: View {
             // 保存到 Core Data
             do {
                 try viewContext.save()
-                print("📌 \(item.isPinned ? "固定" : "取消固定")项目")
+                print("📌 \(item.isPinned ? "Pinned" : "Unpinned") item")
             } catch {
                 print("❌ 保存失败: \(error)")
             }
@@ -271,11 +270,11 @@ struct HistoryListView: View {
 
     private func clearAll() {
         let alert = NSAlert()
-        alert.messageText = "确定要清空所有历史记录吗？"
-        alert.informativeText = "此操作不可撤销"
+        alert.messageText = L10n.text("确定要清空所有历史记录吗？", "Clear all history?")
+        alert.informativeText = L10n.text("此操作不可撤销", "This action cannot be undone.")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "清空")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: AppText.MainWindow.clearAll)
+        alert.addButton(withTitle: AppText.Common.cancel)
 
         if let window = NSApp.keyWindow {
             alert.beginSheetModal(for: window) { response in
@@ -345,7 +344,7 @@ struct BottomActionBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "trash")
                         .font(.system(size: 13))
-                    Text("清空")
+                    Text(AppText.MainWindow.clearAll)
                         .font(.system(size: 13))
                 }
                 .foregroundStyle(.secondary)
@@ -358,7 +357,7 @@ struct BottomActionBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("清空所有历史")
+            .help(L10n.text("清空所有历史", "Clear all history"))
             .onHover { hovering in
                 hoveringClear = hovering
             }
@@ -370,7 +369,7 @@ struct BottomActionBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "gear")
                         .font(.system(size: 13))
-                    Text("设置")
+                    Text(AppText.MainWindow.settings)
                         .font(.system(size: 13))
                 }
                 .foregroundStyle(.secondary)
@@ -383,7 +382,7 @@ struct BottomActionBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("设置")
+            .help(AppText.MainWindow.settings)
             .onHover { hovering in
                 hoveringSettings = hovering
             }
@@ -469,6 +468,15 @@ struct KeyboardEventView: NSViewRepresentable {
 
         override func keyDown(with event: NSEvent) {
             keyHandler?(event)
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            self.window?.makeFirstResponder(self)
+        }
+
+        override func becomeFirstResponder() -> Bool {
+            true
         }
     }
 }
