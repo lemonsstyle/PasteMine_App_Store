@@ -39,9 +39,19 @@ class PasteService {
             // 使用原始数据粘贴（保持原画质）
             if let rawData = item.imageRawData,
                let pasteboardType = item.pasteboardType {
+                // 同时写入图片数据与文件 URL，确保在 Finder 等场景保留原始文件体积
+                var wroteFileURL = false
+                if let imagePath = item.imagePath {
+                    let fileURL = URL(fileURLWithPath: imagePath)
+                    if FileManager.default.fileExists(atPath: imagePath) {
+                        pasteboard.writeObjects([fileURL as NSURL])
+                        wroteFileURL = true
+                    }
+                }
+
                 pasteboard.setData(rawData, forType: pasteboardType)
                 let formatText = item.imageFormat?.uppercased() ?? "IMAGE"
-                print("🖼️  已复制图片到剪贴板（原画质，格式：\(formatText)）: \(item.imageWidth)×\(item.imageHeight)")
+                print("🖼️  已复制图片到剪贴板（原画质，格式：\(formatText)，文件URL: \(wroteFileURL ? "写入" : "未写入")）: \(item.imageWidth)×\(item.imageHeight)")
             } else if let image = item.image {
                 // 降级处理：如果无法获取原始数据，使用 NSImage（画质可能下降）
                 pasteboard.writeObjects([image])
