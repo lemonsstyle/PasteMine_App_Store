@@ -7,6 +7,7 @@
 
 import AppKit
 import Combine
+import UniformTypeIdentifiers
 
 class ClipboardMonitor {
     var latestContent: String?
@@ -88,12 +89,8 @@ class ClipboardMonitor {
             return
         }
 
-        // 优先检查图片（因为有些应用复制图片时也会同时复制文本）
-        // 检查是否有图片数据
-        if pasteboard.data(forType: .png) != nil ||
-           pasteboard.data(forType: .tiff) != nil ||
-           pasteboard.data(forType: .pdf) != nil {
-            handleImage()
+        // 优先处理文件 URL 的图片（Finder 复制文件常见）
+        if handleImage() {
             return
         }
         
@@ -146,31 +143,30 @@ class ClipboardMonitor {
     }
     
     /// 处理图片内容
-    private func handleImage() {
-        // 尝试多种图片类型，保存原始数据
-        let imageTypes: [NSPasteboard.PasteboardType] = [
-            .png, .tiff, .pdf
-        ]
+    @discardableResult
+    private func handleImage() -> Bool {
+        guard let imagePayload = getImageDataFromPasteboard() else { return false }
 
-        for type in imageTypes {
-            if let imageData = pasteboard.data(forType: type) {
+        let imageData = imagePayload.data
+        let type = imagePayload.type
+
                 // 使用原始数据的哈希值
                 let hash = HashUtility.sha256Data(imageData)
 
                 // 与上次内容相同，跳过
-                guard hash != lastHash else { return }
+        guard hash != lastHash else { return true }
 
                 // 检查应用是否在忽略列表中
                 if shouldIgnoreCurrentApp() {
                     lastHash = hash
-                    return
+            return true
                 }
                 
                 // 检查剪贴板类型
                 if shouldIgnorePasteboardTypes() {
                     print("⏭️  已忽略敏感类型")
                     lastHash = hash
-                    return
+            return true
                 }
 
                 lastHash = hash
@@ -195,7 +191,7 @@ class ClipboardMonitor {
                     }
 
                     // 发送通知
-                    let formatText = type == .png ? "PNG" : type == .tiff ? "TIFF" : "PDF"
+            let formatText = formatText(for: type)
                     NotificationService.shared.sendClipboardNotification(content: "\(formatText) 图片 (\(sizeText))", isImage: true)
 
                     print("✅ 已保存 \(formatText) 格式图片（原画质）")
@@ -203,11 +199,7 @@ class ClipboardMonitor {
                     print("❌ 保存图片失败: \(error)")
                 }
 
-                return
-            }
-        }
-
-        print("📋 剪贴板中没有支持的图片格式")
+        return true
     }
 
     /// 从剪贴板获取图片（已弃用，仅用于兼容）
@@ -257,15 +249,11 @@ class ClipboardMonitor {
 
     /// 更新 lastHash（用于粘贴操作时跳过通知但更新状态）
     private func updateLastHash() {
-        // 优先检查图片（使用原始数据）
-        let imageTypes: [NSPasteboard.PasteboardType] = [.png, .tiff, .pdf]
-        for type in imageTypes {
-            if let imageData = pasteboard.data(forType: type) {
-                lastHash = HashUtility.sha256Data(imageData)
+        if let imagePayload = getImageDataFromPasteboard() {
+            lastHash = HashUtility.sha256Data(imagePayload.data)
                 latestContent = nil
-                print("🖼️  已更新图片 hash（格式：\(type == .png ? "PNG" : type == .tiff ? "TIFF" : "PDF")）")
+            print("🖼️  已更新图片 hash（格式：\(formatText(for: imagePayload.type))）")
                 return
-            }
         }
 
         // 其次检查文本
@@ -293,6 +281,92 @@ class ClipboardMonitor {
             }
         }
         return false
+    }
+
+    /// 支持的图片类型（按优先级从文件 URL -> 数据类型）
+    private var supportedImageTypes: [NSPasteboard.PasteboardType] {
+        [
+            .png,
+            .tiff,
+            .pdf,
+            NSPasteboard.PasteboardType("public.jpeg"),
+            NSPasteboard.PasteboardType("public.jpeg-2000"),
+            NSPasteboard.PasteboardType("public.heic"),
+            NSPasteboard.PasteboardType("public.heif"),
+            NSPasteboard.PasteboardType("com.compuserve.gif"),
+            NSPasteboard.PasteboardType("public.webp"),
+            NSPasteboard.PasteboardType("com.microsoft.bmp")
+        ]
+    }
+
+    /// 尝试从剪贴板提取图片数据（优先处理 Finder 文件 URL）
+    private func getImageDataFromPasteboard() -> (data: Data, type: NSPasteboard.PasteboardType)? {
+        // 1) Finder 复制的文件 URL
+        if let fileResult = getImageDataFromFileURL() {
+            return fileResult
+        }
+
+        // 2) 直接提供的图片二进制
+        for type in supportedImageTypes {
+            if let imageData = pasteboard.data(forType: type) {
+                return (imageData, type)
+            }
+        }
+
+        return nil
+    }
+
+    /// 从文件 URL（Finder）中获取图片
+    private func getImageDataFromFileURL() -> (data: Data, type: NSPasteboard.PasteboardType)? {
+        guard let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] else {
+            return nil
+        }
+
+        for url in urls {
+            // 仅处理文件且存在
+            guard url.isFileURL,
+                  FileManager.default.fileExists(atPath: url.path) else {
+                continue
+            }
+
+            // 过滤目录
+            if let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory, isDirectory {
+                continue
+            }
+
+            // 判断是否为图片类型
+            let contentType = (try? url.resourceValues(forKeys: [.contentTypeKey]))?.contentType
+                ?? UTType(filenameExtension: url.pathExtension)
+            guard let contentType, contentType.conforms(to: .image) else {
+                continue
+            }
+
+            guard let data = try? Data(contentsOf: url) else {
+                print("⚠️  读取文件失败: \(url.path)")
+                continue
+            }
+
+            let pbType = NSPasteboard.PasteboardType(contentType.identifier)
+            return (data: data, type: pbType)
+        }
+
+        return nil
+    }
+
+    /// 根据类型生成格式文本
+    private func formatText(for type: NSPasteboard.PasteboardType) -> String {
+        if let utType = UTType(type.rawValue) {
+            if utType.conforms(to: .png) { return "PNG" }
+            if utType.conforms(to: .jpeg) { return "JPEG" }
+            if utType.conforms(to: .tiff) { return "TIFF" }
+            if utType.conforms(to: .gif) { return "GIF" }
+            if utType.conforms(to: .pdf) { return "PDF" }
+            if let heif = UTType("public.heif"), utType.conforms(to: heif) { return "HEIF" }
+            if let heic = UTType("public.heic"), utType.conforms(to: heic) { return "HEIC" }
+            if let webp = UTType("public.webp"), utType.conforms(to: webp) { return "WEBP" }
+            if let bmp = UTType("com.microsoft.bmp"), utType.conforms(to: bmp) { return "BMP" }
+        }
+        return type.rawValue.uppercased()
     }
 }
 

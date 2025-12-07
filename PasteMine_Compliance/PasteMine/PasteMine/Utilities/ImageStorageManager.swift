@@ -8,6 +8,7 @@
 import Foundation
 import AppKit
 import CryptoKit
+import UniformTypeIdentifiers
 
 class ImageStorageManager {
     static let shared = ImageStorageManager()
@@ -46,23 +47,7 @@ class ImageStorageManager {
         let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
 
         // 确定文件扩展名（保持原始格式）
-        let fileExtension: String
-        let formatString: String
-        switch type {
-        case .png:
-            fileExtension = "png"
-            formatString = "png"
-        case .tiff:
-            fileExtension = "tiff"
-            formatString = "tiff"
-        case .pdf:
-            fileExtension = "pdf"
-            formatString = "pdf"
-        default:
-            // 默认使用 png
-            fileExtension = "png"
-            formatString = "png"
-        }
+        let (fileExtension, formatString) = resolveFormat(from: type)
 
         // 使用哈希值作为文件名
         let fileName = "\(hashString).\(fileExtension)"
@@ -157,6 +142,29 @@ class ImageStorageManager {
         }
         
         return totalSize
+    }
+}
+
+private extension ImageStorageManager {
+    /// 从 Pasteboard 类型推断文件扩展名与格式
+    func resolveFormat(from type: NSPasteboard.PasteboardType) -> (String, String) {
+        if let utType = UTType(type.rawValue) {
+            if let ext = utType.preferredFilenameExtension {
+                return (ext, ext)
+            }
+        }
+
+        // 回退：根据常见类型手动匹配
+        switch type {
+        case .png:
+            return ("png", "png")
+        case .tiff:
+            return ("tiff", "tiff")
+        case .pdf:
+            return ("pdf", "pdf")
+        default:
+            return ("png", "png")
+        }
     }
 }
 

@@ -53,6 +53,18 @@ public class ClipboardItem: NSManagedObject, Identifiable {
         switch format {
         case "png":
             return .png
+        case "jpg", "jpeg":
+            return NSPasteboard.PasteboardType("public.jpeg")
+        case "heic":
+            return NSPasteboard.PasteboardType("public.heic")
+        case "heif":
+            return NSPasteboard.PasteboardType("public.heif")
+        case "gif":
+            return NSPasteboard.PasteboardType("com.compuserve.gif")
+        case "webp":
+            return NSPasteboard.PasteboardType("public.webp")
+        case "bmp":
+            return NSPasteboard.PasteboardType("com.microsoft.bmp")
         case "tiff", "tif":
             return .tiff
         case "pdf":
