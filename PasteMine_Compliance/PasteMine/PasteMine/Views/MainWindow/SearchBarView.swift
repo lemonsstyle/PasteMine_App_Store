@@ -41,7 +41,7 @@ struct SearchBarView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
 
-                    TextField("搜索...", text: $searchText)
+                    TextField(AppText.MainWindow.searchPlaceholder, text: $searchText)
                         .textFieldStyle(.plain)
 
                     if !searchText.isEmpty {
@@ -76,7 +76,7 @@ struct SearchBarView: View {
                     HStack(spacing: 6) {
                         // "全部"按钮（文字版）
                         TextFilterButton(
-                            title: "全部",
+                            title: AppText.MainWindow.filterAll,
                             isSelected: selectedFilter == nil,
                             action: {
                                 withAnimation(.smooth(duration: 0.2)) {
@@ -105,7 +105,7 @@ struct SearchBarView: View {
                         // "..."按钮
                         IconFilterButton(
                             icon: NSImage(systemSymbolName: "ellipsis", accessibilityDescription: nil) ?? NSImage(),
-                            appName: "更多",
+                            appName: AppText.MainWindow.filterMore,
                             count: nil,
                             isSelected: showAllApps,
                             action: {
@@ -256,7 +256,7 @@ struct IconFilterButton: View {
         }
         .buttonStyle(.plain)
         .frame(width: 28, height: 28)
-        .help(count != nil ? "\(appName) (\(count!) 条)" : appName)
+        .help(count != nil ? "\(appName) (\(count!) \(L10n.text("条", "items")))" : appName)
         .onHover { hovering in
             withAnimation(.smooth(duration: 0.15)) {
                 isHovered = hovering

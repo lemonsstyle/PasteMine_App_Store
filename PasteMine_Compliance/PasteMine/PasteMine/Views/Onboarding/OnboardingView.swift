@@ -15,7 +15,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            // 背景
+            // Background
         if #available(macOS 14, *) {
             Color.clear
                 .background(.ultraThinMaterial)
@@ -25,27 +25,27 @@ struct OnboardingView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    // 标题区域
+                    // Header
         VStack(spacing: 8) {
             Image(systemName: "hand.wave.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.blue)
                 .padding(.top, 32)
 
-            Text("欢迎使用 PasteMine")
+            Text(AppText.Onboarding.title)
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("一款优雅的剪贴板历史管理工具")
+            Text(L10n.text("一款优雅的剪贴板历史管理工具", "A delightful clipboard history manager"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
                     .padding(.bottom, 32)
 
-                    // 步骤内容
+                    // Steps
         VStack(spacing: 20) {
                         if currentStep == 0 {
-                            // 步骤 1: 通知权限
+                            // Step 1: notification permission
                             NotificationPermissionStepView(
                     isGranted: $notificationPermissionGranted,
                                 primaryAction: {
@@ -56,7 +56,7 @@ struct OnboardingView: View {
                                 }
                 )
                         } else if currentStep == 1 {
-                            // 步骤 2: 辅助功能权限
+                            // Step 2: accessibility permission
                             AccessibilityPermissionStepView(
                     isGranted: $accessibilityPermissionGranted,
                                 primaryAction: {
@@ -67,7 +67,7 @@ struct OnboardingView: View {
                                 }
                 )
                         } else {
-                            // 步骤 3: 完成
+                            // Step 3: completion
                 CompletionStepView(
                     notificationGranted: notificationPermissionGranted,
                     accessibilityGranted: accessibilityPermissionGranted,
@@ -80,7 +80,7 @@ struct OnboardingView: View {
                     .frame(minHeight: 480)
         .animation(.easeInOut, value: currentStep)
 
-                    // 底部指示器
+                    // Pager dots
         HStack(spacing: 8) {
             ForEach(0..<3) { index in
                 Circle()
@@ -103,34 +103,35 @@ struct OnboardingView: View {
     }
 
     private func requestNotificationPermission() {
-        print("🔔 正在请求通知权限...")
+        print("🔔 Requesting notification permission...")
 
-        // ⚠️ 关键修改：确保应用处于激活状态，这样系统弹窗才能正常显示
+        // Ensure app is active so the system sheet can appear
         NSApp.activate(ignoringOtherApps: true)
 
-        // 短暂延迟，确保应用激活完成
+        // Small delay to ensure activation is done
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // 先检查当前权限状态
+            // Check current status first
             UNUserNotificationCenter.current().getNotificationSettings { settings in
-                print("📊 当前通知权限状态: \(settings.authorizationStatus.rawValue)")
+                print("📊 Notification status: \(settings.authorizationStatus.rawValue)")
 
                 if settings.authorizationStatus == .notDetermined {
-                    // 首次请求权限，会弹出系统对话框
-                    print("🔔 首次请求，将弹出系统对话框...")
+                    // First-time request
+                    print("🔔 First request, system dialog will appear...")
 
-                    // ⚠️ 再次确保应用激活（关键：LSUIElement=true 应用需要）
+                    // Ensure activation again (LSUIElement app)
                     NSApp.activate(ignoringOtherApps: true)
 
                     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
                         DispatchQueue.main.async {
                             if let error = error {
-                                print("❌ 请求通知权限失败: \(error.localizedDescription)")
+                                print("❌ Notification permission failed: \(error.localizedDescription)")
                             } else {
-                                print("✅ 通知权限请求结果: \(granted ? "已授权" : "已拒绝")")
+                                let result = granted ? "granted" : "denied"
+                                print("✅ Notification permission: \(result)")
                             }
                             self.notificationPermissionGranted = granted
                             if granted {
-                                // 自动进入下一步
+                                // Go next
                                 withAnimation {
                                     self.currentStep = 1
                                 }
@@ -138,20 +139,20 @@ struct OnboardingView: View {
                         }
                     }
                 } else if settings.authorizationStatus == .authorized {
-                    // 已经授权
+                    // Already granted
                     DispatchQueue.main.async {
-                        print("✅ 通知权限已经授权")
+                        print("✅ Notification already granted")
                         self.notificationPermissionGranted = true
                         withAnimation {
                             self.currentStep = 1
                         }
                     }
                 } else if settings.authorizationStatus == .denied {
-                    // 已经拒绝，引导用户去系统设置开启
+                    // Denied: guide to system settings
                     DispatchQueue.main.async {
-                        print("⚠️ 通知权限已被拒绝，需要手动开启")
+                        print("⚠️ Notification permission denied, enable manually")
                         self.notificationPermissionGranted = false
-                        // 打开系统通知设置
+                        // Open system settings
                         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
                             NSWorkspace.shared.open(url)
                         }
@@ -162,16 +163,16 @@ struct OnboardingView: View {
     }
 
     private func openAccessibilitySettings() {
-        // 打开系统设置的辅助功能页面
+        // Open system settings accessibility page
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
 
-        // 开始检查权限状态
+        // Start checking permission state
         startCheckingAccessibilityPermission()
     }
 
     private func startCheckingAccessibilityPermission() {
-        // 每秒检查一次权限状态
+        // Check every second
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
             let granted = NSApplication.shared.isAccessibilityPermissionGranted()
 
@@ -180,7 +181,7 @@ struct OnboardingView: View {
                     accessibilityPermissionGranted = granted
 
                     if granted {
-                        // 权限已授予，自动进入下一步
+                        // Granted: go next
                         withAnimation {
                             currentStep = 2
                         }
@@ -189,7 +190,7 @@ struct OnboardingView: View {
                 }
             }
 
-            // 如果已经离开这个步骤，停止检查
+            // Stop if step changed
             if currentStep != 1 {
                 timer.invalidate()
             }
@@ -197,52 +198,52 @@ struct OnboardingView: View {
     }
 
     private func checkPermissions() {
-        // 检查通知权限
+        // Check notification permission
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
                 notificationPermissionGranted = settings.authorizationStatus == .authorized
             }
         }
 
-        // 检查辅助功能权限
+        // Check accessibility
         accessibilityPermissionGranted = NSApplication.shared.isAccessibilityPermissionGranted()
     }
 
     private func completeOnboarding() {
-        print("🎉 正在完成引导...")
+        print("🎉 Completing onboarding...")
 
-        // 标记已完成引导
+        // Mark as completed
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
-        // 确保 NotificationService 已初始化（刷新权限状态）
+        // Refresh notification status
         NotificationService.shared.refreshAuthorizationStatus()
 
-        print("✅ 引导完成，托盘图标已可用")
-        print("💡 提示：点击右上角托盘图标或按 ⌘⇧V 打开剪贴板历史")
+        print("✅ Onboarding done, menu bar icon ready")
+        print("💡 Tip: Click the menu bar icon or press ⌘⇧V to open history")
 
-        // 延迟后关闭引导窗口
+        // Close onboarding window
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            if let window = NSApp.windows.first(where: { $0.title == "欢迎使用 PasteMine" }) {
+            if let window = NSApp.windows.first(where: { $0.title == AppText.Onboarding.title }) {
                 window.close()
-                print("✅ 引导窗口已关闭")
+                print("✅ Onboarding window closed")
             }
 
-            // 确保应用保持激活状态
+            // Ensure app stays active
             NSApp.activate(ignoringOtherApps: true)
 
-            // 额外的安全措施：延迟后再次检查应用状态
+            // Extra safety check
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 if !NSApp.isActive {
-                    print("⚠️ 应用未激活，重新激活")
+                    print("⚠️ App not active, re-activating")
                     NSApp.activate(ignoringOtherApps: true)
                 }
-                print("✅ 应用状态检查完成")
+                print("✅ App state check done")
             }
         }
     }
 }
 
-// 通知权限步骤视图
+// Notification permission step view
 struct NotificationPermissionStepView: View {
     @Binding var isGranted: Bool
     let primaryAction: () -> Void
@@ -251,7 +252,7 @@ struct NotificationPermissionStepView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // 图标
+            // Icon
             ZStack {
                 Circle()
                     .fill(Color.blue.opacity(0.1))
@@ -263,26 +264,26 @@ struct NotificationPermissionStepView: View {
             }
             .padding(.top, 16)
 
-            // 标题
+            // Title
             VStack(spacing: 6) {
-                Text("开启通知")
+                Text(L10n.text("开启通知", "Enable notifications"))
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text("接收剪贴板复制和粘贴提醒")
+                Text(L10n.text("接收剪贴板复制和粘贴提醒", "Get alerts for copy and paste"))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
 
-            // 功能说明
+            // Description
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.blue)
-                    Text("通知将告诉您：")
+                    Text(L10n.text("通知将告诉您：", "Notifications will tell you:"))
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
@@ -292,14 +293,14 @@ struct NotificationPermissionStepView: View {
                     HStack(alignment: .top, spacing: 6) {
                         Text("✓")
                             .foregroundStyle(.green)
-                        Text("成功复制内容时的确认提示")
+                        Text(L10n.text("成功复制内容时的确认提示", "Confirmation when copy succeeds"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     HStack(alignment: .top, spacing: 6) {
                         Text("✓")
                             .foregroundStyle(.green)
-                        Text("自动粘贴完成后的提醒")
+                        Text(L10n.text("自动粘贴完成后的提醒", "Reminder after auto-paste completes"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -322,27 +323,27 @@ struct NotificationPermissionStepView: View {
             )
             .padding(.horizontal, 24)
 
-            // 状态指示
+            // Status
             if isGranted {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("已授权")
+                    Text(L10n.text("已授权", "Granted"))
                         .foregroundStyle(.green)
                         .fontWeight(.medium)
                 }
                 .padding(.top, 4)
             } else if isDenied {
-                // 已拒绝提示
+                // Denied hint
                 VStack(spacing: 6) {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundStyle(.orange)
-                        Text("权限已被拒绝")
+                        Text(L10n.text("权限已被拒绝", "Permission denied"))
                             .foregroundStyle(.orange)
                             .fontWeight(.medium)
                     }
-                    Text("请在系统设置中手动开启")
+                    Text(L10n.text("请在系统设置中手动开启", "Please enable it in System Settings"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -352,12 +353,12 @@ struct NotificationPermissionStepView: View {
             Spacer()
                 .frame(height: 30)
 
-            // 按钮
+            // Buttons
             VStack(spacing: 12) {
                 if !isGranted {
                     Button(action: {
                         if isDenied {
-                            // 已拒绝，打开系统设置
+                            // Denied: open settings
                             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
                                 NSWorkspace.shared.open(url)
                             }
@@ -365,7 +366,7 @@ struct NotificationPermissionStepView: View {
                             primaryAction()
                         }
                     }) {
-                        Text(isDenied ? "打开系统设置" : "授予权限")
+                        Text(isDenied ? L10n.text("打开系统设置", "Open System Settings") : L10n.text("授予权限", "Grant permission"))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Color.accentColor)
@@ -376,7 +377,7 @@ struct NotificationPermissionStepView: View {
                 }
 
                 Button(action: secondaryAction) {
-                    Text(isGranted ? "下一步" : "稍后设置")
+                    Text(isGranted ? L10n.text("下一步", "Next") : L10n.text("稍后设置", "Maybe later"))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(isGranted ? Color.accentColor : Color.clear)
@@ -390,7 +391,7 @@ struct NotificationPermissionStepView: View {
         }
         .frame(maxWidth: .infinity)
         .onAppear {
-            // 检查权限状态
+            // Status check
             UNUserNotificationCenter.current().getNotificationSettings { settings in
                 DispatchQueue.main.async {
                     isDenied = settings.authorizationStatus == .denied
@@ -401,7 +402,7 @@ struct NotificationPermissionStepView: View {
     }
 }
 
-// 权限步骤视图（通用）
+// Generic permission step view
 struct PermissionStepView: View {
     let icon: String
     let iconColor: Color
@@ -415,7 +416,7 @@ struct PermissionStepView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // 图标
+            // Icon
             ZStack {
                 Circle()
                     .fill(iconColor.opacity(0.1))
@@ -427,7 +428,7 @@ struct PermissionStepView: View {
             }
             .padding(.top, 16)
 
-            // 文本
+            // Text
             VStack(spacing: 8) {
                 Text(title)
                     .font(.title2)
@@ -440,12 +441,12 @@ struct PermissionStepView: View {
                     .padding(.horizontal, 24)
             }
 
-            // 状态指示
+            // Status
             if isGranted {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("已授权")
+                    Text(L10n.text("已授权", "Granted"))
                         .foregroundStyle(.green)
                         .fontWeight(.medium)
                 }
@@ -455,7 +456,7 @@ struct PermissionStepView: View {
             Spacer()
                 .frame(height: 30)
 
-            // 按钮
+            // Buttons
             VStack(spacing: 12) {
                 if !isGranted {
                     Button(action: primaryAction) {
@@ -470,7 +471,7 @@ struct PermissionStepView: View {
                 }
 
                 Button(action: secondaryAction) {
-                    Text(isGranted ? "下一步" : secondaryButtonTitle)
+                    Text(isGranted ? L10n.text("下一步", "Next") : secondaryButtonTitle)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(isGranted ? Color.accentColor : Color.clear)
@@ -486,7 +487,7 @@ struct PermissionStepView: View {
     }
 }
 
-// 辅助功能权限步骤视图（带详细指引）
+// Accessibility permission step
 struct AccessibilityPermissionStepView: View {
     @Binding var isGranted: Bool
     let primaryAction: () -> Void
@@ -494,7 +495,7 @@ struct AccessibilityPermissionStepView: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            // 图标
+            // Icon
             ZStack {
                 Circle()
                     .fill(Color.green.opacity(0.1))
@@ -506,32 +507,32 @@ struct AccessibilityPermissionStepView: View {
             }
             .padding(.top, 16)
 
-            // 标题
+            // Title
             VStack(spacing: 6) {
-                Text("开启辅助功能")
+                Text(L10n.text("开启辅助功能", "Enable accessibility"))
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text("允许 PasteMine 实现自动粘贴功能")
+                Text(L10n.text("允许 PasteMine 实现自动粘贴功能", "Allow PasteMine to perform auto-paste"))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
 
-            // 详细操作步骤
+            // Steps
             VStack(alignment: .leading, spacing: 10) {
-                Text("操作步骤：")
+                Text(L10n.text("操作步骤：", "Steps:"))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    StepRow(number: "1", text: "点击下方按钮打开「系统设置」")
-                    StepRow(number: "2", text: "进入「隐私与安全性」")
-                    StepRow(number: "3", text: "点击「辅助功能」")
-                    StepRow(number: "4", text: "点击「+」添加 PasteMine")
-                    StepRow(number: "5", text: "可能需要输入密码确认")
+                    StepRow(number: "1", text: L10n.text("点击下方按钮打开「系统设置」", "Click the button below to open System Settings"))
+                    StepRow(number: "2", text: L10n.text("进入「隐私与安全性」", "Go to Privacy & Security"))
+                    StepRow(number: "3", text: L10n.text("点击「辅助功能」", "Click Accessibility"))
+                    StepRow(number: "4", text: L10n.text("点击「+」添加 PasteMine", "Click \"+\" to add PasteMine"))
+                    StepRow(number: "5", text: L10n.text("可能需要输入密码确认", "You may need to enter your password"))
                 }
             }
             .padding(14)
@@ -547,12 +548,12 @@ struct AccessibilityPermissionStepView: View {
             }
             .padding(.horizontal, 24)
 
-            // 状态指示
+            // Status
             if isGranted {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("已授权")
+                    Text(L10n.text("已授权", "Granted"))
                         .foregroundStyle(.green)
                         .fontWeight(.medium)
                 }
@@ -562,11 +563,11 @@ struct AccessibilityPermissionStepView: View {
             Spacer()
                 .frame(height: 20)
 
-            // 按钮
+            // Buttons
             VStack(spacing: 12) {
                 if !isGranted {
                     Button(action: primaryAction) {
-                        Text("打开系统设置")
+                        Text(L10n.text("打开系统设置", "Open System Settings"))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Color.accentColor)
@@ -577,7 +578,7 @@ struct AccessibilityPermissionStepView: View {
                 }
 
                 Button(action: secondaryAction) {
-                    Text(isGranted ? "下一步" : "稍后设置")
+                    Text(isGranted ? L10n.text("下一步", "Next") : L10n.text("稍后设置", "Maybe later"))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(isGranted ? Color.accentColor : Color.clear)
@@ -593,7 +594,7 @@ struct AccessibilityPermissionStepView: View {
     }
 }
 
-// 步骤行组件
+// Step row
 struct StepRow: View {
     let number: String
     let text: String
@@ -617,7 +618,7 @@ struct StepRow: View {
     }
 }
 
-// 完成步骤视图
+// Completion view
 struct CompletionStepView: View {
     let notificationGranted: Bool
     let accessibilityGranted: Bool
@@ -625,7 +626,7 @@ struct CompletionStepView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // 成功图标
+            // Success icon
             ZStack {
                 Circle()
                     .fill(Color.green.opacity(0.1))
@@ -637,28 +638,28 @@ struct CompletionStepView: View {
             }
             .padding(.top, 16)
 
-            // 标题
+            // Title
             VStack(spacing: 6) {
-                Text("设置完成！")
+                Text(L10n.text("设置完成！", "Setup complete!"))
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text("您已准备好使用 PasteMine")
+                Text(L10n.text("您已准备好使用 PasteMine", "You're ready to use PasteMine"))
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
 
-            // 权限状态总结
+            // Permission summary
             VStack(spacing: 10) {
                 PermissionStatusRow(
                     icon: "bell.fill",
-                    title: "通知权限",
+                    title: L10n.text("通知权限", "Notification"),
                     isGranted: notificationGranted
                 )
 
                 PermissionStatusRow(
                     icon: "hand.point.up.left.fill",
-                    title: "辅助功能权限",
+                    title: L10n.text("辅助功能权限", "Accessibility"),
                     isGranted: accessibilityGranted
                 )
             }
@@ -675,13 +676,13 @@ struct CompletionStepView: View {
             .padding(.horizontal, 24)
             .padding(.top, 8)
 
-            // 提示信息
+            // Tips
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.blue)
-                    Text("使用提示")
+                    Text(L10n.text("使用提示", "Tips"))
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
@@ -691,14 +692,14 @@ struct CompletionStepView: View {
                     HStack(alignment: .top, spacing: 6) {
                         Text("•")
                             .foregroundStyle(.secondary)
-                        Text("按 ⌘⇧V 或点击菜单栏图标打开历史窗口")
+                        Text(L10n.text("按 ⌘⇧V 或点击菜单栏图标打开历史窗口", "Press ⌘⇧V or click the menu bar icon to open history"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     HStack(alignment: .top, spacing: 6) {
                         Text("•")
                             .foregroundStyle(.secondary)
-                        Text("点击历史记录即可自动粘贴到当前应用")
+                        Text(L10n.text("点击历史记录即可自动粘贴到当前应用", "Click a history item to auto-paste into the front app"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -722,7 +723,7 @@ struct CompletionStepView: View {
             .padding(.horizontal, 24)
 
             if !notificationGranted || !accessibilityGranted {
-                Text("您可以稍后在系统设置中开启缺失的权限")
+                Text(L10n.text("您可以稍后在系统设置中开启缺失的权限", "You can enable missing permissions later in System Settings"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.top, 4)
@@ -731,9 +732,9 @@ struct CompletionStepView: View {
             Spacer()
                 .frame(height: 20)
 
-            // 完成按钮
+            // Finish button
             Button(action: onComplete) {
-                Text("开始使用")
+                Text(L10n.text("开始使用", "Start using"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(Color.accentColor)
@@ -748,7 +749,7 @@ struct CompletionStepView: View {
     }
 }
 
-// 权限状态行
+// Permission status row
 struct PermissionStatusRow: View {
     let icon: String
     let title: String

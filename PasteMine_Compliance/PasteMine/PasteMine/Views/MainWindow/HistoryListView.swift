@@ -27,6 +27,8 @@ struct HistoryListView: View {
     @State private var selectedIndex: Int = 0
     @State private var selectedFilter: AppSourceFilter? = nil
     @State private var hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
+    @State private var imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
+    @State private var previewWorkItem: DispatchWorkItem?
     @Binding var showSettings: Bool
     
     // 统计所有应用出现次数（使用 bundleId 作为唯一标识）
@@ -79,11 +81,10 @@ struct HistoryListView: View {
                 if $0.itemType == .text {
                     return ($0.content ?? "").localizedCaseInsensitiveContains(searchText)
                 }
-                // 图片：搜索来源应用或"图片"关键字
+                // 图片：搜索来源应用或 "image" 关键字
                 else if $0.itemType == .image {
                     let appMatch = ($0.appSource ?? "").localizedCaseInsensitiveContains(searchText)
-                    let keywordMatch = "图片".localizedCaseInsensitiveContains(searchText) ||
-                                       "image".localizedCaseInsensitiveContains(searchText)
+                    let keywordMatch = "image".localizedCaseInsensitiveContains(searchText)
                     return appMatch || keywordMatch
                 }
                 return false
@@ -118,9 +119,9 @@ struct HistoryListView: View {
             
             if !hasAccessibilityPermission {
                 PermissionBannerView(
-                    title: "未授予辅助功能权限",
-                    message: "自动粘贴将降级为仅复制。前往“系统设置 > 隐私与安全 > 辅助功能”开启权限即可恢复。",
-                    actionTitle: "前往设置",
+                    title: L10n.text("未授予辅助功能权限", "Accessibility permission not granted"),
+                    message: L10n.text("自动粘贴将降级为仅复制。前往“系统设置 > 隐私与安全 > 辅助功能”开启权限即可恢复。", "Auto-paste will fall back to copy only. Go to System Settings > Privacy & Security > Accessibility to enable."),
+                    actionTitle: L10n.text("前往设置", "Open Settings"),
                     action: openAccessibilitySettings
                 )
                 .padding(.horizontal, 14)
@@ -129,7 +130,7 @@ struct HistoryListView: View {
 
             // 列表
             if filteredItems.isEmpty {
-                EmptyStateView(message: searchText.isEmpty ? "暂无剪贴板历史" : "没有找到匹配的记录")
+                EmptyStateView(message: searchText.isEmpty ? AppText.MainWindow.emptyStateTitle : AppText.Common.noMatches)
             } else {
                 ScrollViewReader { proxy in
                     List {
@@ -144,6 +145,9 @@ struct HistoryListView: View {
                                 isSelected: index == selectedIndex,
                                 onPinToggle: { item in
                                     togglePin(item)
+                                },
+                                onHoverChanged: { hovering in
+                                    handleHoverPreview(for: item, hovering: hovering)
                                 }
                             )
                                 .id(item.id)
@@ -152,10 +156,10 @@ struct HistoryListView: View {
                                     pasteItem(item)
                                 }
                                 .contextMenu {
-                                    Button(item.isPinned ? "取消固定" : "固定") {
+                                    Button(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned) {
                                         togglePin(item)
                                     }
-                                    Button("删除") {
+                                    Button(AppText.Common.delete) {
                                         deleteItem(item)
                                     }
                                 }
@@ -201,6 +205,12 @@ struct HistoryListView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification, object: nil)) { _ in
             hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
+            if !imagePreviewEnabled {
+                ImagePreviewWindow.shared.hide()
+            }
         }
     }
 
@@ -262,7 +272,7 @@ struct HistoryListView: View {
             // 保存到 Core Data
             do {
                 try viewContext.save()
-                print("📌 \(item.isPinned ? "固定" : "取消固定")项目")
+                print("📌 \(item.isPinned ? "Pinned" : "Unpinned") item")
             } catch {
                 print("❌ 保存失败: \(error)")
             }
@@ -271,11 +281,11 @@ struct HistoryListView: View {
 
     private func clearAll() {
         let alert = NSAlert()
-        alert.messageText = "确定要清空所有历史记录吗？"
-        alert.informativeText = "此操作不可撤销"
+        alert.messageText = L10n.text("确定要清空所有历史记录吗？", "Clear all history?")
+        alert.informativeText = L10n.text("此操作不可撤销", "This action cannot be undone.")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "清空")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: AppText.MainWindow.clearAll)
+        alert.addButton(withTitle: AppText.Common.cancel)
 
         if let window = NSApp.keyWindow {
             alert.beginSheetModal(for: window) { response in
@@ -328,6 +338,145 @@ struct HistoryListView: View {
             NSWorkspace.shared.open(url)
         }
     }
+
+    private func handleHoverPreview(for item: ClipboardItem, hovering: Bool) {
+        previewWorkItem?.cancel()
+
+        guard imagePreviewEnabled, item.itemType == .image, let image = item.image else {
+            ImagePreviewWindow.shared.hide()
+            return
+        }
+
+        if hovering {
+            let work = DispatchWorkItem {
+                let anchorWindow = NSApp.mainWindow
+                ImagePreviewWindow.shared.show(image: image, anchor: anchorWindow)
+            }
+            previewWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: work)
+        } else {
+            ImagePreviewWindow.shared.hide()
+        }
+    }
+}
+
+// 图片预览窗口控制
+final class ImagePreviewWindow {
+    static let shared = ImagePreviewWindow()
+    
+    private var panel: NSPanel?
+    private let size = NSSize(width: 320, height: 320)
+    private let cornerRadius: CGFloat = 12
+    private var isVisible: Bool = false
+    
+    private init() {}
+    
+    private func ensurePanel() -> NSPanel {
+        if let panel = panel { return panel }
+        let panel = NSPanel(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.hudWindow, .nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.isFloatingPanel = true
+        panel.hidesOnDeactivate = true
+        panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.isMovable = false
+        self.panel = panel
+        return panel
+    }
+    
+    func show(image: NSImage, anchor: NSWindow?) {
+        let panel = ensurePanel()
+        panel.contentView = NSHostingView(rootView: ImagePreviewContent(image: image))
+        
+        if let anchor = anchor, let screen = anchor.screen {
+            let anchorFrame = anchor.frame
+            var origin = NSPoint(
+                x: anchorFrame.maxX + 12,
+                y: anchorFrame.midY - size.height / 2
+            )
+            
+            let visible = screen.visibleFrame
+            // Clamp horizontally
+            if origin.x + size.width > visible.maxX {
+                origin.x = anchorFrame.minX - size.width - 12
+            }
+            if origin.x < visible.minX {
+                origin.x = visible.minX + 8
+            }
+            // Clamp vertically
+            if origin.y + size.height > visible.maxY {
+                origin.y = visible.maxY - size.height - 8
+            }
+            if origin.y < visible.minY {
+                origin.y = visible.minY + 8
+            }
+            
+            panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: false)
+        }
+        
+        if !isVisible {
+            panel.alphaValue = 0
+            panel.orderFront(nil)
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.15
+                panel.animator().alphaValue = 1
+            }
+            isVisible = true
+        } else {
+            panel.orderFront(nil)
+        }
+    }
+    
+    func hide() {
+        guard let panel = panel, isVisible else { return }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.12
+            panel.animator().alphaValue = 0
+        }, completionHandler: { [weak self] in
+            panel.orderOut(nil)
+            panel.alphaValue = 1
+            self?.isVisible = false
+        })
+    }
+}
+
+struct ImagePreviewContent: View {
+    let image: NSImage
+    private let cornerRadius: CGFloat = 12
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            if #available(macOS 14, *) {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(.regularMaterial)
+            } else {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color(NSColor.windowBackgroundColor))
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+        )
+    }
 }
 
 // 底部操作栏
@@ -345,7 +494,7 @@ struct BottomActionBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "trash")
                         .font(.system(size: 13))
-                    Text("清空")
+                    Text(AppText.MainWindow.clearAll)
                         .font(.system(size: 13))
                 }
                 .foregroundStyle(.secondary)
@@ -358,7 +507,7 @@ struct BottomActionBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("清空所有历史")
+            .help(L10n.text("清空所有历史", "Clear all history"))
             .onHover { hovering in
                 hoveringClear = hovering
             }
@@ -370,7 +519,7 @@ struct BottomActionBar: View {
                 HStack(spacing: 4) {
                     Image(systemName: "gear")
                         .font(.system(size: 13))
-                    Text("设置")
+                    Text(AppText.MainWindow.settings)
                         .font(.system(size: 13))
                 }
                 .foregroundStyle(.secondary)
@@ -383,7 +532,7 @@ struct BottomActionBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("设置")
+            .help(AppText.MainWindow.settings)
             .onHover { hovering in
                 hoveringSettings = hovering
             }
@@ -469,6 +618,15 @@ struct KeyboardEventView: NSViewRepresentable {
 
         override func keyDown(with event: NSEvent) {
             keyHandler?(event)
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            self.window?.makeFirstResponder(self)
+        }
+
+        override func becomeFirstResponder() -> Bool {
+            true
         }
     }
 }

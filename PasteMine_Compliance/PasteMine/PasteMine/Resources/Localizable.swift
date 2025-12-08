@@ -8,123 +8,158 @@
 
 import Foundation
 
-/// 应用内所有文字的统一管理
+enum AppLanguage {
+    case zhHans
+    case en
+
+    static var current: AppLanguage {
+        if let code = Locale.preferredLanguages.first?.lowercased(),
+           code.hasPrefix("zh") {
+            return .zhHans
+        }
+        return .en
+    }
+}
+
+enum L10n {
+    static func text(_ zh: String, _ en: String) -> String {
+        AppLanguage.current == .zhHans ? zh : en
+    }
+}
+
 enum AppText {
+    private static let lang = AppLanguage.current
+    private static func t(_ zh: String, _ en: String) -> String { lang == .zhHans ? zh : en }
     
     // MARK: - 设置页面
     enum Settings {
-        static let title = "设置"
-        static let doneButton = "完成"
+        static var title: String { t("设置", "Settings") }
+        static var doneButton: String { t("完成", "Done") }
+        static var groupGeneral: String { t("通用", "General") }
+        static var groupStorage: String { t("存储", "Storage") }
+        static var groupPrivacy: String { t("隐私", "Privacy") }
         
         // 分组标题
         enum Groups {
-            static let general = "通用"
-            static let storage = "存储"
-            static let privacy = "隐私"
+            static var general: String { t("通用", "General") }
+            static var storage: String { t("存储", "Storage") }
+            static var privacy: String { t("隐私", "Privacy") }
         }
         
         // 通用设置
         enum General {
-            static let clipboardHistory = "启用剪贴板历史记录"
-            static let clipboardHistoryDesc = "开启后才会在本机保存最近的剪贴板内容，可随时关闭"
-            static let notification = "通知"
-            static let notificationDesc = "复制时显示通知"
+            static var clipboardHistory: String { t("启用剪贴板历史记录", "Enable clipboard history") }
+            static var clipboardHistoryDesc: String { t("开启后才会在本机保存最近的剪贴板内容，可随时关闭", "Only after enabling will recent clipboard content be saved locally; you can turn it off anytime.") }
+            static var notification: String { t("通知", "Notifications") }
+            static var notificationDesc: String { t("复制时显示通知", "Show notification when copying") }
             
-            static let sound = "音效"
-            static let soundDesc = "播放提示音效"
+            static var sound: String { t("音效", "Sound") }
+            static var soundDesc: String { t("播放提示音效", "Play sound on actions") }
             
-            static let globalShortcut = "全局快捷键"
-            static let globalShortcutDesc = "显示/隐藏窗口"
+            static var globalShortcut: String { t("全局快捷键", "Global shortcut") }
+            static var globalShortcutDesc: String { t("显示/隐藏窗口", "Show / hide window") }
             
-            static let launchAtLogin = "开机自启动"
-            static let launchAtLoginDesc = "自动启动应用"
-            static let launchAtLoginUnsupported = "该功能仅支持 macOS 13 及以上系统"
+            static var launchAtLogin: String { t("开机自启动", "Launch at login") }
+            static var launchAtLoginDesc: String { t("自动启动应用", "Start automatically on login") }
+            static var launchAtLoginUnsupported: String { t("该功能仅支持 macOS 13 及以上系统", "Available on macOS 13+") }
         }
         
         // 存储设置
         enum Storage {
-            static let historyLimit = "历史记录上限"
-            static let historyLimitDesc = "超出自动删除"
-            static let historyPermanent = "永久"
-            static func historyCount(_ count: Int) -> String { "\(count) 条" }
+            static var historyLimit: String { t("历史记录上限", "History limit") }
+            static var historyLimitDesc: String { t("超出自动删除", "Auto-delete when exceeding limit") }
+            static var historyPermanent: String { t("永久", "Unlimited") }
+            static func historyCount(_ count: Int) -> String { t("\(count) 条", "\(count) items") }
             
-            static let ignoreLargeImages = "忽略大图片以节省磁盘空间"
-            static let ignoreLargeImagesDesc = "超过 20MB 的图片将不会被保存到历史中"
+            static var ignoreLargeImages: String { t("忽略大图片以节省磁盘空间", "Ignore large images to save disk space") }
+            static var ignoreLargeImagesDesc: String { t("超过 20MB 的图片将不会被保存到历史中", "Images over 20MB will not be saved") }
+            
+            static var imagePreview: String { t("图片悬停预览", "Image hover preview") }
+            static var imagePreviewDesc: String { t("悬停 0.7 秒显示放大预览（默认关闭）", "Show enlarged preview after 0.7s hover (off by default)") }
         }
         
         // 隐私设置
         enum Privacy {
-            static let ignoreApps = "忽略应用"
-            static let ignoreTypes = "忽略类型"
+            static var ignoreApps: String { t("忽略应用", "Ignored apps") }
+            static var ignoreTypes: String { t("忽略类型", "Ignored types") }
             
-            static let selectApp = "选择应用"
-            static let ignoreAppsDesc = "这些应用中的复制操作不会被记录"
-            static let defaultIgnoredAppsDesc = "PasteMine 默认已忽略常见密码管理器和自动填充工具，您可在此增删。"
+            static var selectApp: String { t("选择应用", "Select app") }
+            static var ignoreAppsDesc: String { t("这些应用中的复制操作不会被记录", "Copies from these apps will be ignored") }
+            static var defaultIgnoredAppsDesc: String { t("PasteMine 默认已忽略常见密码管理器和自动填充工具，您可在此增删。", "Common password managers and autofill tools are ignored by default; adjust as needed.") }
             
-            static let addType = "添加"
-            static let typeListTitle = "类型列表"
-            static let typePlaceholder = "输入 pasteboard type"
-            static let ignoreTypesDesc = "这些类型的隐私内容不会被记录"
-            static let defaultIgnoredTypesDesc = "已预置密码字段等敏感剪贴板类型，可根据需要调整。"
-            static let ignoreTypesToggleLabel = "启用忽略类型"
+            static var addType: String { t("添加", "Add") }
+            static var typeListTitle: String { t("类型列表", "Type list") }
+            static var typePlaceholder: String { t("输入 pasteboard type", "Enter pasteboard type") }
+            static var ignoreTypesDesc: String { t("这些类型的隐私内容不会被记录", "These sensitive types will not be recorded") }
+            static var defaultIgnoredTypesDesc: String { t("已预置密码字段等敏感剪贴板类型，可根据需要调整。", "Sensitive pasteboard types (password/OTP) are preset; adjust as needed.") }
+            static var ignoreTypesToggleLabel: String { t("启用忽略类型", "Enable ignored types") }
             
-            static let clearOnQuit = "退出时清空剪贴板"
-            static let clearOnQuitDesc = "退出应用时自动清除所有历史记录"
+            static var clearOnQuit: String { t("退出时清空剪贴板", "Clear history on quit") }
+            static var clearOnQuitDesc: String { t("退出应用时自动清除所有历史记录", "Automatically remove all history when quitting") }
             
-            static let emptyList = "列表为空"
+            static var emptyList: String { t("列表为空", "Empty list") }
         }
     }
     
     // MARK: - 主窗口
     enum MainWindow {
-        static let windowTitle = "剪贴板历史"
-        static let searchPlaceholder = "搜索..."
-        static let emptyStateTitle = "暂无剪贴板记录"
-        static let emptyStateMessage = "开始复制内容，它们会出现在这里"
-        static let clearAll = "清空"
-        static let settings = "设置"
+        static var windowTitle: String { "PasteMine" }
+        static var searchPlaceholder: String { t("搜索...", "Search...") }
+        static var emptyStateTitle: String { t("暂无剪贴板记录", "No clipboard items yet") }
+        static var emptyStateMessage: String { t("开始复制内容，它们会出现在这里", "Start copying and items will show here") }
+        static var clearAll: String { t("清空", "Clear all") }
+        static var settings: String { t("设置", "Settings") }
         
         // 筛选相关
-        static let filterAll = "全部"
-        static let filterMore = "..."
+        static var filterAll: String { t("全部", "All") }
+        static var filterMore: String { "..." }
     }
     
     // MARK: - 引导页面
     enum Onboarding {
-        static let title = "欢迎使用 PasteMine"
-        static let step1Title = "📋 自动记录"
-        static let step1Desc = "自动记录你的复制内容\n支持文本和图片"
+        static var title: String { t("欢迎使用 PasteMine", "Welcome to PasteMine") }
+        static var step1Title: String { t("📋 自动记录", "📋 Auto capture") }
+        static var step1Desc: String { t("自动记录你的复制内容\n支持文本和图片", "Automatically record your copies\nSupports text & images") }
         
-        static let step2Title = "⌨️ 快捷访问"
-        static let step2Desc = "使用快捷键快速调出历史\n默认：⌘⇧V"
+        static var step2Title: String { t("⌨️ 快捷访问", "⌨️ Quick access") }
+        static var step2Desc: String { t("使用快捷键快速调出历史\n默认：⌘⇧V", "Use shortcut to open history\nDefault: ⌘⇧V") }
         
-        static let step3Title = "🔒 隐私保护"
-        static let step3Desc = "可设置忽略特定应用\n保护敏感信息"
+        static var step3Title: String { t("🔒 隐私保护", "🔒 Privacy") }
+        static var step3Desc: String { t("可设置忽略特定应用\n保护敏感信息", "Ignore specific apps to protect sensitive info") }
         
-        static let getStarted = "开始使用"
-        static let permissionTitle = "需要授予权限"
-        static let permissionMessage = "为了正常工作，请在系统设置中授予通知权限"
+        static var getStarted: String { t("开始使用", "Get started") }
+        static var permissionTitle: String { t("需要授予权限", "Permission required") }
+        static var permissionMessage: String { t("为了正常工作，请在系统设置中授予通知权限", "Grant notification permission in System Settings to proceed.") }
     }
     
     // MARK: - 通知
     enum Notifications {
-        static let copyTitle = "📋 剪贴板已更新"
-        static let copyImageTitle = "📸 复制了图片"
-        static let pasteTitle = "📋 粘贴成功"
+        static var copyTitle: String { t("📋 剪贴板已更新", "📋 Clipboard updated") }
+        static var copyImageTitle: String { t("📸 复制了图片", "📸 Image copied") }
+        static var pasteTextTitle: String { t("📋 已粘贴文本", "📋 Text pasted") }
+        static var pasteImageTitle: String { t("📸 已粘贴图片", "📸 Image pasted") }
+        static var skippedTitle: String { t("已忽略一张大图片", "Large image skipped") }
+        static var skippedLargeImage: String { t("图片大于 20MB，PasteMine 未将其加入历史。", "Image exceeds 20MB. PasteMine didn't add it to history.") }
+        static var accessibilityMissingTitle: String { t("需要辅助功能权限", "Accessibility permission required") }
+        static var accessibilityMissingBody: String { t("未授予辅助功能权限，PasteMine 只能复制内容。请前往 系统设置 > 隐私与安全 > 辅助功能 中开启。", "Accessibility not granted. PasteMine can only copy. Go to System Settings > Privacy & Security > Accessibility to enable.") }
     }
     
     // MARK: - 右键菜单
     enum Menu {
-        static let showWindow = "显示窗口"
-        static let quit = "退出"
+        static var showWindow: String { t("显示窗口", "Show window") }
+        static var quit: String { t("退出", "Quit") }
     }
     
     // MARK: - 通用
     enum Common {
-        static let delete = "删除"
-        static let cancel = "取消"
-        static let confirm = "确认"
-        static let copy = "复制"
-        static let paste = "粘贴"
+        static var delete: String { t("删除", "Delete") }
+        static var cancel: String { t("取消", "Cancel") }
+        static var confirm: String { t("确认", "Confirm") }
+        static var copy: String { t("复制", "Copy") }
+        static var paste: String { t("粘贴", "Paste") }
+        static var imageLabel: String { t("图片", "Image") }
+        static var pinned: String { t("固定", "Pin") }
+        static var unpinned: String { t("取消固定", "Unpin") }
+        static var noMatches: String { t("没有找到匹配的记录", "No matching records") }
     }
 }

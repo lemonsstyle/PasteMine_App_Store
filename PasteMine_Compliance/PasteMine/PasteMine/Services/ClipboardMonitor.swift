@@ -194,10 +194,16 @@ class ClipboardMonitor {
             let formatText = formatText(for: type)
                     NotificationService.shared.sendClipboardNotification(content: "\(formatText) 图片 (\(sizeText))", isImage: true)
 
-                    print("✅ 已保存 \(formatText) 格式图片（原画质）")
-                } catch {
-                    print("❌ 保存图片失败: \(error)")
-                }
+            print("✅ 已保存 \(formatText) 格式图片（原画质）")
+        } catch {
+            let nsError = error as NSError
+            if nsError.domain == "ImageStorageManager", nsError.code == 2 {
+                NotificationService.shared.sendClipboardSkippedNotification(reason: AppText.Notifications.skippedLargeImage)
+                print("⚠️ Large image skipped: \(nsError.localizedDescription)")
+            } else {
+                print("❌ 保存图片失败: \(error)")
+            }
+        }
 
         return true
     }
