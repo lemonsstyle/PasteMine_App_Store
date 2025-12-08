@@ -28,7 +28,6 @@ struct HistoryListView: View {
     @State private var selectedFilter: AppSourceFilter? = nil
     @State private var hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
     @State private var imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
-    @State private var previewItem: ClipboardItem?
     @State private var previewWorkItem: DispatchWorkItem?
     @Binding var showSettings: Bool
     
@@ -133,77 +132,70 @@ struct HistoryListView: View {
             if filteredItems.isEmpty {
                 EmptyStateView(message: searchText.isEmpty ? AppText.MainWindow.emptyStateTitle : AppText.Common.noMatches)
             } else {
-                HStack(alignment: .top, spacing: 12) {
-                    ScrollViewReader { proxy in
-                        List {
-                            // 顶部锚点（用于滚动定位）
-                            Color.clear
-                                .frame(height: 0)
-                                .id("top")
+                ScrollViewReader { proxy in
+                    List {
+                        // 顶部锚点（用于滚动定位）
+                        Color.clear
+                            .frame(height: 0)
+                            .id("top")
 
-                            ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
-                                HistoryItemView(
-                                    item: item,
-                                    isSelected: index == selectedIndex,
-                                    onPinToggle: { item in
+                        ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
+                            HistoryItemView(
+                                item: item,
+                                isSelected: index == selectedIndex,
+                                onPinToggle: { item in
+                                    togglePin(item)
+                                },
+                                onHoverChanged: { hovering in
+                                    handleHoverPreview(for: item, hovering: hovering)
+                                }
+                            )
+                                .id(item.id)
+                                .onTapGesture {
+                                    selectedIndex = index
+                                    pasteItem(item)
+                                }
+                                .contextMenu {
+                                    Button(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned) {
                                         togglePin(item)
-                                    },
-                                    onHoverChanged: { hovering in
-                                        handleHoverPreview(for: item, hovering: hovering)
                                     }
-                                )
-                                    .id(item.id)
-                                    .onTapGesture {
-                                        selectedIndex = index
-                                        pasteItem(item)
+                                    Button(AppText.Common.delete) {
+                                        deleteItem(item)
                                     }
-                                    .contextMenu {
-                                        Button(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned) {
-                                            togglePin(item)
-                                        }
-                                        Button(AppText.Common.delete) {
-                                            deleteItem(item)
-                                        }
-                                    }
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
-                            }
+                                }
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                         }
-                        .listStyle(.plain)
-                        .scrollContentBackground(.hidden)
-                        .scrollIndicators(.automatic, axes: .vertical)
-                        .background(ScrollViewConfigurator())
-                        .background {
-                            if #available(macOS 14, *) {
-                                Color.clear
-                            } else {
-                                Color(NSColor.windowBackgroundColor)
-                            }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .scrollIndicators(.automatic, axes: .vertical)
+                    .background(ScrollViewConfigurator())
+                    .background {
+                        if #available(macOS 14, *) {
+                            Color.clear
+                        } else {
+                            Color(NSColor.windowBackgroundColor)
                         }
-                        .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { _ in
-                            // 窗口显示时，滚动到顶部，重置选中项
-                            selectedIndex = 0
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { _ in
+                        // 窗口显示时，滚动到顶部，重置选中项
+                        selectedIndex = 0
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            proxy.scrollTo("top", anchor: .top)
+                        }
+                    }
+                    .onAppear {
+                        // 首次显示时也滚动到顶部
+                        selectedIndex = 0
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             withAnimation(.easeOut(duration: 0.3)) {
                                 proxy.scrollTo("top", anchor: .top)
                             }
                         }
-                        .onAppear {
-                            // 首次显示时也滚动到顶部
-                            selectedIndex = 0
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                withAnimation(.easeOut(duration: 0.3)) {
-                                    proxy.scrollTo("top", anchor: .top)
-                                }
-                            }
-                        }
-                        .onKeyboardEvent { event in
-                            handleKeyPress(event: event, proxy: proxy)
-                        }
                     }
-
-                    if imagePreviewEnabled {
-                        ImagePreviewPanel(item: previewItem)
-                            .frame(width: 260, height: 260)
+                    .onKeyboardEvent { event in
+                        handleKeyPress(event: event, proxy: proxy)
                     }
                 }
             }
@@ -216,6 +208,9 @@ struct HistoryListView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
             imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
+            if !imagePreviewEnabled {
+                ImagePreviewWindow.shared.hide()
+            }
         }
     }
 
@@ -347,63 +342,138 @@ struct HistoryListView: View {
     private func handleHoverPreview(for item: ClipboardItem, hovering: Bool) {
         previewWorkItem?.cancel()
 
-        guard imagePreviewEnabled, item.itemType == .image else {
-            previewItem = nil
+        guard imagePreviewEnabled, item.itemType == .image, let image = item.image else {
+            ImagePreviewWindow.shared.hide()
             return
         }
 
         if hovering {
-            let work = DispatchWorkItem { self.previewItem = item }
+            let work = DispatchWorkItem {
+                let anchorWindow = NSApp.mainWindow
+                ImagePreviewWindow.shared.show(image: image, anchor: anchorWindow)
+            }
             previewWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: work)
         } else {
-            previewItem = nil
+            ImagePreviewWindow.shared.hide()
         }
     }
 }
 
-// 图片预览面板
-struct ImagePreviewPanel: View {
-    let item: ClipboardItem?
+// 图片预览窗口控制
+final class ImagePreviewWindow {
+    static let shared = ImagePreviewWindow()
+    
+    private var panel: NSPanel?
+    private let size = NSSize(width: 320, height: 320)
+    private let cornerRadius: CGFloat = 12
+    private var isVisible: Bool = false
+    
+    private init() {}
+    
+    private func ensurePanel() -> NSPanel {
+        if let panel = panel { return panel }
+        let panel = NSPanel(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.hudWindow, .nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.isFloatingPanel = true
+        panel.hidesOnDeactivate = true
+        panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.isMovable = false
+        self.panel = panel
+        return panel
+    }
+    
+    func show(image: NSImage, anchor: NSWindow?) {
+        let panel = ensurePanel()
+        panel.contentView = NSHostingView(rootView: ImagePreviewContent(image: image))
+        
+        if let anchor = anchor, let screen = anchor.screen {
+            let anchorFrame = anchor.frame
+            var origin = NSPoint(
+                x: anchorFrame.maxX + 12,
+                y: anchorFrame.midY - size.height / 2
+            )
+            
+            let visible = screen.visibleFrame
+            // Clamp horizontally
+            if origin.x + size.width > visible.maxX {
+                origin.x = anchorFrame.minX - size.width - 12
+            }
+            if origin.x < visible.minX {
+                origin.x = visible.minX + 8
+            }
+            // Clamp vertically
+            if origin.y + size.height > visible.maxY {
+                origin.y = visible.maxY - size.height - 8
+            }
+            if origin.y < visible.minY {
+                origin.y = visible.minY + 8
+            }
+            
+            panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: false)
+        }
+        
+        if !isVisible {
+            panel.alphaValue = 0
+            panel.orderFront(nil)
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.15
+                panel.animator().alphaValue = 1
+            }
+            isVisible = true
+        } else {
+            panel.orderFront(nil)
+        }
+    }
+    
+    func hide() {
+        guard let panel = panel, isVisible else { return }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.12
+            panel.animator().alphaValue = 0
+        }, completionHandler: { [weak self] in
+            panel.orderOut(nil)
+            panel.alphaValue = 1
+            self?.isVisible = false
+        })
+    }
+}
 
+struct ImagePreviewContent: View {
+    let image: NSImage
+    private let cornerRadius: CGFloat = 12
+    
     var body: some View {
-        VStack(spacing: 8) {
-            if let image = item?.image {
-                Image(nsImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            } else {
-                VStack(spacing: 6) {
-                    Image(systemName: "photo")
-                        .font(.title)
-                        .foregroundStyle(.secondary)
-                    Text(AppText.Common.imageLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        VStack(spacing: 0) {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
-            if let item, item.itemType == .image {
-                Text("\(item.imageWidth) × \(item.imageHeight)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
         .padding(10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             if #available(macOS 14, *) {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(.regularMaterial)
             } else {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor))
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color(NSColor.windowBackgroundColor))
             }
         }
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
         )
     }

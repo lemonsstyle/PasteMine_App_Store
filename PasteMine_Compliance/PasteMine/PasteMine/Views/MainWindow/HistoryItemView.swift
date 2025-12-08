@@ -11,6 +11,7 @@ struct HistoryItemView: View {
     let item: ClipboardItem
     var isSelected: Bool = false
     @State private var isHovered = false
+    @State private var cachedImage: NSImage? = nil
     var onPinToggle: ((ClipboardItem) -> Void)?
     var onHoverChanged: ((Bool) -> Void)?
 
@@ -38,7 +39,7 @@ struct HistoryItemView: View {
                 // 左侧：内容/图片预览
                 if item.itemType == .image {
                     // 显示图片缩略图
-                    if let image = item.image {
+                    if let image = cachedImage ?? item.image {
                         Image(nsImage: image)
                             .resizable()
                             .scaledToFit()
@@ -137,10 +138,17 @@ struct HistoryItemView: View {
                 }
             }
             .onHover { hovering in
-                withAnimation(.smooth(duration: 0.25)) {
-                    isHovered = hovering
+                if hovering != isHovered {
+                    withAnimation(.easeOut(duration: 0.12)) {
+                        isHovered = hovering
+                    }
+                    onHoverChanged?(hovering)
                 }
-                onHoverChanged?(hovering)
+            }
+            .onAppear {
+                if cachedImage == nil, item.itemType == .image {
+                    cachedImage = item.image
+                }
             }
 
             // 分隔线
