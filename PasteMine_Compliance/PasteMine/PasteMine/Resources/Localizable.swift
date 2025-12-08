@@ -138,8 +138,8 @@ enum AppText {
         static var copyImageTitle: String { t("📸 复制了图片", "📸 Image copied") }
         static var pasteTextTitle: String { t("📋 已粘贴文本", "📋 Text pasted") }
         static var pasteImageTitle: String { t("📸 已粘贴图片", "📸 Image pasted") }
-        static var skippedTitle: String { t("剪贴板未更新", "Clipboard not updated") }
-        static var skippedLargeImage: String { t("图片超过 20MB，已跳过保存", "Image exceeds 20MB, skipped") }
+        static var skippedTitle: String { t("已忽略一张大图片", "Large image skipped") }
+        static var skippedLargeImage: String { t("图片大于 20MB，PasteMine 未将其加入历史。", "Image exceeds 20MB. PasteMine didn't add it to history.") }
         static var accessibilityMissingTitle: String { t("需要辅助功能权限", "Accessibility permission required") }
         static var accessibilityMissingBody: String { t("未授予辅助功能权限，PasteMine 只能复制内容。请前往 系统设置 > 隐私与安全 > 辅助功能 中开启。", "Accessibility not granted. PasteMine can only copy. Go to System Settings > Privacy & Security > Accessibility to enable.") }
     }
