@@ -27,6 +27,9 @@ struct HistoryListView: View {
     @State private var selectedIndex: Int = 0
     @State private var selectedFilter: AppSourceFilter? = nil
     @State private var hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
+    @State private var imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
+    @State private var previewItem: ClipboardItem?
+    @State private var previewWorkItem: DispatchWorkItem?
     @Binding var showSettings: Bool
     
     // 统计所有应用出现次数（使用 bundleId 作为唯一标识）
@@ -128,69 +131,79 @@ struct HistoryListView: View {
 
             // 列表
             if filteredItems.isEmpty {
-                EmptyStateView(message: searchText.isEmpty ? AppText.MainWindow.emptyStateTitle : L10n.text("没有找到匹配的记录", "No matching records"))
+                EmptyStateView(message: searchText.isEmpty ? AppText.MainWindow.emptyStateTitle : AppText.Common.noMatches)
             } else {
-                ScrollViewReader { proxy in
-                    List {
-                        // 顶部锚点（用于滚动定位）
-                        Color.clear
-                            .frame(height: 0)
-                            .id("top")
-
-                        ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
-                            HistoryItemView(
-                                item: item,
-                                isSelected: index == selectedIndex,
-                                onPinToggle: { item in
-                                    togglePin(item)
-                                }
-                            )
-                                .id(item.id)
-                                .onTapGesture {
-                                    selectedIndex = index
-                                    pasteItem(item)
-                                }
-                                .contextMenu {
-                                    Button(item.isPinned ? L10n.text("取消固定", "Unpin") : L10n.text("固定", "Pin")) {
-                                        togglePin(item)
-                                    }
-                                    Button(AppText.Common.delete) {
-                                        deleteItem(item)
-                                    }
-                                }
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                        }
-                    }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .scrollIndicators(.automatic, axes: .vertical)
-                    .background(ScrollViewConfigurator())
-                    .background {
-                        if #available(macOS 14, *) {
+                HStack(alignment: .top, spacing: 12) {
+                    ScrollViewReader { proxy in
+                        List {
+                            // 顶部锚点（用于滚动定位）
                             Color.clear
-                        } else {
-                            Color(NSColor.windowBackgroundColor)
+                                .frame(height: 0)
+                                .id("top")
+
+                            ForEach(Array(filteredItems.enumerated()), id: \.element.id) { index, item in
+                                HistoryItemView(
+                                    item: item,
+                                    isSelected: index == selectedIndex,
+                                    onPinToggle: { item in
+                                        togglePin(item)
+                                    },
+                                    onHoverChanged: { hovering in
+                                        handleHoverPreview(for: item, hovering: hovering)
+                                    }
+                                )
+                                    .id(item.id)
+                                    .onTapGesture {
+                                        selectedIndex = index
+                                        pasteItem(item)
+                                    }
+                                    .contextMenu {
+                                        Button(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned) {
+                                            togglePin(item)
+                                        }
+                                        Button(AppText.Common.delete) {
+                                            deleteItem(item)
+                                        }
+                                    }
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                            }
                         }
-                    }
-                    .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { _ in
-                        // 窗口显示时，滚动到顶部，重置选中项
-                        selectedIndex = 0
-                        withAnimation(.easeOut(duration: 0.3)) {
-                            proxy.scrollTo("top", anchor: .top)
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                        .scrollIndicators(.automatic, axes: .vertical)
+                        .background(ScrollViewConfigurator())
+                        .background {
+                            if #available(macOS 14, *) {
+                                Color.clear
+                            } else {
+                                Color(NSColor.windowBackgroundColor)
+                            }
                         }
-                    }
-                    .onAppear {
-                        // 首次显示时也滚动到顶部
-                        selectedIndex = 0
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { _ in
+                            // 窗口显示时，滚动到顶部，重置选中项
+                            selectedIndex = 0
                             withAnimation(.easeOut(duration: 0.3)) {
                                 proxy.scrollTo("top", anchor: .top)
                             }
                         }
+                        .onAppear {
+                            // 首次显示时也滚动到顶部
+                            selectedIndex = 0
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    proxy.scrollTo("top", anchor: .top)
+                                }
+                            }
+                        }
+                        .onKeyboardEvent { event in
+                            handleKeyPress(event: event, proxy: proxy)
+                        }
                     }
-                    .onKeyboardEvent { event in
-                        handleKeyPress(event: event, proxy: proxy)
+
+                    if imagePreviewEnabled {
+                        ImagePreviewPanel(item: previewItem)
+                            .frame(width: 260, height: 260)
                     }
                 }
             }
@@ -200,6 +213,9 @@ struct HistoryListView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification, object: nil)) { _ in
             hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+            imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
         }
     }
 
@@ -326,6 +342,70 @@ struct HistoryListView: View {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    private func handleHoverPreview(for item: ClipboardItem, hovering: Bool) {
+        previewWorkItem?.cancel()
+
+        guard imagePreviewEnabled, item.itemType == .image else {
+            previewItem = nil
+            return
+        }
+
+        if hovering {
+            let work = DispatchWorkItem { self.previewItem = item }
+            previewWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: work)
+        } else {
+            previewItem = nil
+        }
+    }
+}
+
+// 图片预览面板
+struct ImagePreviewPanel: View {
+    let item: ClipboardItem?
+
+    var body: some View {
+        VStack(spacing: 8) {
+            if let image = item?.image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else {
+                VStack(spacing: 6) {
+                    Image(systemName: "photo")
+                        .font(.title)
+                        .foregroundStyle(.secondary)
+                    Text(AppText.Common.imageLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            if let item, item.itemType == .image {
+                Text("\(item.imageWidth) × \(item.imageHeight)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(10)
+        .background {
+            if #available(macOS 14, *) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.regularMaterial)
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(NSColor.controlBackgroundColor))
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+        )
     }
 }
 

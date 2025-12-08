@@ -122,7 +122,7 @@ class NotificationService {
 
         // 构建通知内容
         let notificationContent = UNMutableNotificationContent()
-        notificationContent.title = isImage ? "📸 复制了图片" : "📋 剪贴板已更新"
+        notificationContent.title = isImage ? AppText.Notifications.copyImageTitle : AppText.Notifications.copyTitle
 
         // 截断内容，最多显示 50 个字符
         let truncated = content.count > 50
@@ -150,6 +150,39 @@ class NotificationService {
                 }
                 // 无论通知发送成功与否，都播放音效
                 SoundService.shared.playCopySound()
+            }
+        }
+    }
+
+    /// 发送剪贴板未更新通知（如大图被忽略）
+    func sendClipboardSkippedNotification(reason: String) {
+        let settings = AppSettings.load()
+        guard settings.notificationEnabled else {
+            print("📢 通知已禁用（应用设置）")
+            return
+        }
+
+        guard isAuthorized else {
+            refreshAuthorizationStatus()
+            return
+        }
+
+        let notificationContent = UNMutableNotificationContent()
+        notificationContent.title = AppText.Notifications.skippedTitle
+        notificationContent.body = reason
+        notificationContent.sound = nil
+
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: notificationContent,
+            trigger: nil
+        )
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ 发送未更新通知失败: \(error.localizedDescription)")
+            } else {
+                print("ℹ️ 已发送未更新通知: \(reason)")
             }
         }
     }
@@ -186,7 +219,7 @@ class NotificationService {
 
         // 构建通知内容
         let notificationContent = UNMutableNotificationContent()
-        notificationContent.title = isImage ? "📸 已粘贴图片" : "📋 已粘贴文本"
+        notificationContent.title = isImage ? AppText.Notifications.pasteImageTitle : AppText.Notifications.pasteTextTitle
 
         // 截断内容，最多显示 50 个字符
         let truncated = content.count > 50
@@ -239,8 +272,8 @@ class NotificationService {
         }
         
         let notificationContent = UNMutableNotificationContent()
-        notificationContent.title = "需要辅助功能权限"
-        notificationContent.body = "未授予辅助功能权限，PasteMine 只能复制内容。请前往 系统设置 > 隐私与安全 > 辅助功能 中开启。"
+        notificationContent.title = AppText.Notifications.accessibilityMissingTitle
+        notificationContent.body = AppText.Notifications.accessibilityMissingBody
         notificationContent.sound = nil
         
         let request = UNNotificationRequest(

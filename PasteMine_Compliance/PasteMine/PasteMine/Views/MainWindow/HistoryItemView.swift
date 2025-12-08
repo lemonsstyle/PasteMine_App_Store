@@ -12,6 +12,7 @@ struct HistoryItemView: View {
     var isSelected: Bool = false
     @State private var isHovered = false
     var onPinToggle: ((ClipboardItem) -> Void)?
+    var onHoverChanged: ((Bool) -> Void)?
 
     private var displayContent: String {
         switch item.itemType {
@@ -19,14 +20,14 @@ struct HistoryItemView: View {
             let lines = item.content?.components(separatedBy: .newlines) ?? []
             return lines.prefix(3).joined(separator: "\n")
         case .image:
-            return "🖼️ 图片 (\(item.imageWidth) × \(item.imageHeight))"
+            return "🖼️ \(AppText.Common.imageLabel) (\(item.imageWidth) × \(item.imageHeight))"
         }
     }
 
     private var timeAgo: String {
         guard let createdAt = item.createdAt else { return "" }
         let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = .autoupdatingCurrent
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: createdAt, relativeTo: Date())
     }
@@ -97,7 +98,7 @@ struct HistoryItemView: View {
                         .opacity((isHovered || item.isPinned) ? 1.0 : 0.0)
                 }
                 .buttonStyle(.plain)
-                .help(item.isPinned ? "取消固定" : "固定")
+                .help(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 12)
@@ -139,6 +140,7 @@ struct HistoryItemView: View {
                 withAnimation(.smooth(duration: 0.25)) {
                     isHovered = hovering
                 }
+                onHoverChanged?(hovering)
             }
 
             // 分隔线

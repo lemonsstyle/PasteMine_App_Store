@@ -50,6 +50,7 @@ struct AppSettings: Codable {
     var globalShortcut: KeyboardShortcut = .defaultShortcut  // 默认 ⌘⇧V
     var maxHistoryCount: Int = 50  // 默认 50 条
     var ignoreLargeImages: Bool = false  // 是否忽略大图片（>20MB）
+    var imagePreviewEnabled: Bool = false  // 图片悬停预览
     var clipboardHistoryEnabled: Bool = false  // 是否启用剪贴板历史（默认关闭）
     
     // 隐私设置

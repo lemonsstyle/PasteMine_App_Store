@@ -8,10 +8,10 @@
 import SwiftUI
 
 // 设置分组枚举
-enum SettingsGroup: String, CaseIterable {
-    case general = "通用"
-    case storage = "存储"
-    case privacy = "隐私"
+enum SettingsGroup: CaseIterable {
+    case general
+    case storage
+    case privacy
 
     var icon: String {
         switch self {
@@ -20,17 +20,32 @@ enum SettingsGroup: String, CaseIterable {
         case .privacy: return "lock.shield"
         }
     }
+    
+    var title: String {
+        switch self {
+        case .general: return AppText.Settings.groupGeneral
+        case .storage: return AppText.Settings.groupStorage
+        case .privacy: return AppText.Settings.groupPrivacy
+        }
+    }
 }
 
 // 隐私子分组枚举
-enum PrivacySubGroup: String, CaseIterable {
-    case apps = "忽略应用"
-    case types = "忽略类型"
+enum PrivacySubGroup: CaseIterable {
+    case apps
+    case types
     
     var icon: String {
         switch self {
         case .apps: return "app.badge.fill"
         case .types: return "doc.text.fill"
+        }
+    }
+    
+    var title: String {
+        switch self {
+        case .apps: return AppText.Settings.Privacy.ignoreApps
+        case .types: return AppText.Settings.Privacy.ignoreTypes
         }
     }
 }
@@ -67,7 +82,7 @@ struct SettingsView: View {
                             Image(systemName: group.icon)
                                 .font(.system(size: 20))
                                 .foregroundColor(selectedGroup == group ? .accentColor : .secondary)
-                            Text(group.rawValue)
+                            Text(group.title)
                                 .font(.caption)
                                 .foregroundColor(selectedGroup == group ? .accentColor : .secondary)
                         }
@@ -265,6 +280,27 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 1)
         }
+
+        SettingsSectionView(title: "") {
+            HStack(spacing: 12) {
+                Text(AppText.Settings.Storage.imagePreview)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                
+                Spacer()
+                
+                Toggle("", isOn: $settings.imagePreviewEnabled)
+                    .toggleStyle(.switch)
+                    .onChange(of: settings.imagePreviewEnabled) { _ in
+                        settings.save()
+                    }
+            }
+            
+            Text(AppText.Settings.Storage.imagePreviewDesc)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.top, 1)
+        }
     }
 
     // 隐私设置
@@ -282,7 +318,7 @@ struct SettingsView: View {
                         HStack(spacing: 4) {
                             Image(systemName: subGroup.icon)
                                 .font(.caption)
-                            Text(subGroup.rawValue)
+                            Text(subGroup.title)
                                 .font(.caption)
                         }
                         .foregroundColor(selectedPrivacySubGroup == subGroup ? .white : .secondary)

@@ -35,6 +35,9 @@ enum AppText {
     enum Settings {
         static var title: String { t("设置", "Settings") }
         static var doneButton: String { t("完成", "Done") }
+        static var groupGeneral: String { t("通用", "General") }
+        static var groupStorage: String { t("存储", "Storage") }
+        static var groupPrivacy: String { t("隐私", "Privacy") }
         
         // 分组标题
         enum Groups {
@@ -70,6 +73,9 @@ enum AppText {
             
             static var ignoreLargeImages: String { t("忽略大图片以节省磁盘空间", "Ignore large images to save disk space") }
             static var ignoreLargeImagesDesc: String { t("超过 20MB 的图片将不会被保存到历史中", "Images over 20MB will not be saved") }
+            
+            static var imagePreview: String { t("图片悬停预览", "Image hover preview") }
+            static var imagePreviewDesc: String { t("悬停 0.7 秒显示放大预览（默认关闭）", "Show enlarged preview after 0.7s hover (off by default)") }
         }
         
         // 隐私设置
@@ -130,7 +136,12 @@ enum AppText {
     enum Notifications {
         static var copyTitle: String { t("📋 剪贴板已更新", "📋 Clipboard updated") }
         static var copyImageTitle: String { t("📸 复制了图片", "📸 Image copied") }
-        static var pasteTitle: String { t("📋 粘贴成功", "📋 Pasted") }
+        static var pasteTextTitle: String { t("📋 已粘贴文本", "📋 Text pasted") }
+        static var pasteImageTitle: String { t("📸 已粘贴图片", "📸 Image pasted") }
+        static var skippedTitle: String { t("剪贴板未更新", "Clipboard not updated") }
+        static var skippedLargeImage: String { t("图片超过 20MB，已跳过保存", "Image exceeds 20MB, skipped") }
+        static var accessibilityMissingTitle: String { t("需要辅助功能权限", "Accessibility permission required") }
+        static var accessibilityMissingBody: String { t("未授予辅助功能权限，PasteMine 只能复制内容。请前往 系统设置 > 隐私与安全 > 辅助功能 中开启。", "Accessibility not granted. PasteMine can only copy. Go to System Settings > Privacy & Security > Accessibility to enable.") }
     }
     
     // MARK: - 右键菜单
@@ -146,5 +157,9 @@ enum AppText {
         static var confirm: String { t("确认", "Confirm") }
         static var copy: String { t("复制", "Copy") }
         static var paste: String { t("粘贴", "Paste") }
+        static var imageLabel: String { t("图片", "Image") }
+        static var pinned: String { t("固定", "Pin") }
+        static var unpinned: String { t("取消固定", "Unpin") }
+        static var noMatches: String { t("没有找到匹配的记录", "No matching records") }
     }
 }
