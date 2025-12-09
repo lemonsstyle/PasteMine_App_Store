@@ -16,6 +16,7 @@ extension Notification.Name {
 
 struct HistoryListView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var proManager: ProEntitlementManager
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardItem.createdAt, ascending: false)],
         animation: .default
@@ -261,6 +262,18 @@ struct HistoryListView: View {
     }
 
     private func togglePin(_ item: ClipboardItem) {
+        // 如果要固定项目，检查 Pro 权限
+        if !item.isPinned {
+            // 统计当前已固定数量
+            let pinnedCount = items.filter { $0.isPinned }.count
+            
+            // 免费版只能固定 1 条
+            if !proManager.isProFeatureEnabled && pinnedCount >= 1 {
+                showProUpgradeAlert()
+                return
+            }
+        }
+        
         withAnimation(.easeOut(duration: 0.2)) {
             item.isPinned.toggle()
             if item.isPinned {
@@ -278,11 +291,35 @@ struct HistoryListView: View {
             }
         }
     }
+    
+    private func showProUpgradeAlert() {
+        let alert = NSAlert()
+        alert.messageText = AppText.Pro.unlimitedPinsTitle
+        alert.informativeText = AppText.Pro.unlimitedPinsMessage
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: AppText.Pro.upgradeToPro)
+        alert.addButton(withTitle: AppText.Common.cancel)
+        
+        if let window = NSApp.keyWindow {
+            alert.beginSheetModal(for: window) { response in
+                if response == .alertFirstButtonReturn {
+                    // TODO: 打开 Pro 面板
+                    print("打开 Pro 面板")
+                }
+            }
+        } else {
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                // TODO: 打开 Pro 面板
+                print("打开 Pro 面板")
+            }
+        }
+    }
 
     private func clearAll() {
         let alert = NSAlert()
-        alert.messageText = L10n.text("确定要清空所有历史记录吗？", "Clear all history?")
-        alert.informativeText = L10n.text("此操作不可撤销", "This action cannot be undone.")
+        alert.messageText = AppText.Pro.clearAllTitle
+        alert.informativeText = AppText.Pro.clearAllMessage
         alert.alertStyle = .warning
         alert.addButton(withTitle: AppText.MainWindow.clearAll)
         alert.addButton(withTitle: AppText.Common.cancel)
@@ -342,7 +379,11 @@ struct HistoryListView: View {
     private func handleHoverPreview(for item: ClipboardItem, hovering: Bool) {
         previewWorkItem?.cancel()
 
-        guard imagePreviewEnabled, item.itemType == .image, let image = item.image else {
+        // 只有 Pro 用户且开启了预览功能才显示
+        guard proManager.isProFeatureEnabled,
+              imagePreviewEnabled,
+              item.itemType == .image,
+              let image = item.image else {
             ImagePreviewWindow.shared.hide()
             return
         }
@@ -603,13 +644,15 @@ struct KeyboardEventView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = KeyEventHandlingView()
         view.keyHandler = handler
-        DispatchQueue.main.async {
-            view.window?.makeFirstResponder(view)
-        }
         return view
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // 每次更新时，尝试获取焦点
+        DispatchQueue.main.async {
+            nsView.window?.makeFirstResponder(nsView)
+        }
+    }
 
     class KeyEventHandlingView: NSView {
         var keyHandler: ((NSEvent) -> Void)?
@@ -622,7 +665,10 @@ struct KeyboardEventView: NSViewRepresentable {
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            self.window?.makeFirstResponder(self)
+            // 窗口加载时立即获取焦点
+            DispatchQueue.main.async {
+                self.window?.makeFirstResponder(self)
+            }
         }
 
         override func becomeFirstResponder() -> Bool {
