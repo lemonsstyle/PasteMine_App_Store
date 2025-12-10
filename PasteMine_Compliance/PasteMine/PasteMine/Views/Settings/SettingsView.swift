@@ -300,7 +300,7 @@ struct SettingsView: View {
                         settings.save()
                     }
                 } else {
-                    // 免费版显示升级提示
+                    // 免费版显示升级提示（占满宽度）
                     Button(action: {
                         isShowingProSheet = true
                     }) {
@@ -310,8 +310,12 @@ struct SettingsView: View {
                             Text(AppText.Pro.upgradeForMoreHistory)
                                 .font(.caption)
                         }
-                        .foregroundColor(.accentColor)
+                        .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.accentColor.opacity(0.1))
+                        )
                     }
                     .buttonStyle(.plain)
                 }
