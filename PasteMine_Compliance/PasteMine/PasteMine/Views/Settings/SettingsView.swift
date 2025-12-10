@@ -154,7 +154,7 @@ struct SettingsView: View {
             }
             .padding(16)
         }
-        .frame(width: 420, height: 547)
+        .frame(width: 420, height: 510)
         .background {
             if #available(macOS 14, *) {
                 Color.clear
@@ -277,15 +277,20 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
 
                     if !proManager.isProFeatureEnabled {
-                        Text(AppText.Pro.freeVersionBadge)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                Capsule()
-                                    .fill(Color.secondary.opacity(0.1))
-                            )
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.blue)
+                            Text(AppText.Pro.freeVersionBadge)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(Color.secondary.opacity(0.1))
+                        )
                     }
                 }
 
@@ -300,22 +305,15 @@ struct SettingsView: View {
                         settings.save()
                     }
                 } else {
-                    // 免费版显示升级提示（占满宽度）
+                    // 免费版显示升级提示（左对齐，普通文字样式）
                     Button(action: {
                         isShowingProSheet = true
                     }) {
-                        HStack {
-                            Image(systemName: "star.fill")
-                                .font(.caption)
-                            Text(AppText.Pro.upgradeForMoreHistory)
-                                .font(.caption)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.accentColor.opacity(0.1))
-                        )
+                        Text(AppText.Pro.upgradeForMoreHistory)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 1)
                     }
                     .buttonStyle(.plain)
                 }
