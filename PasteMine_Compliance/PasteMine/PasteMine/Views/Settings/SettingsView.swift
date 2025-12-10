@@ -154,7 +154,7 @@ struct SettingsView: View {
             }
             .padding(16)
         }
-        .frame(width: 420, height: 510)
+        .frame(width: 420, height: 530)
         .background {
             if #available(macOS 14, *) {
                 Color.clear
@@ -285,12 +285,6 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(Color.secondary.opacity(0.1))
-                        )
                     }
                 }
 

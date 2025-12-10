@@ -6,7 +6,7 @@
 set -e
 
 APP_NAME="PasteMine"
-BUNDLE_ID="com.lemonstyle.PasteMine22"
+BUNDLE_ID="com.lemonstyle.PasteMine23"
 
 echo "🧹 开始清理 ${APP_NAME} 的权限缓存..."
 echo ""
