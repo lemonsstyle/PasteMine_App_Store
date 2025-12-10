@@ -278,17 +278,22 @@ struct SettingsView: View {
 
                     Spacer()
 
-                    // Pro 标签（类似图片悬停预览的样式）
+                    // Pro 标签（圆角矩形，可点击）
                     if !proManager.isProFeatureEnabled {
-                        Text(AppText.Pro.proLabel)
-                            .font(.caption)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule()
-                                    .fill(Color.accentColor)
-                            )
+                        Button(action: {
+                            isShowingProSheet = true
+                        }) {
+                            Text(AppText.Pro.proLabel)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(Color.accentColor)
+                                )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
 
@@ -303,17 +308,12 @@ struct SettingsView: View {
                         settings.save()
                     }
                 } else {
-                    // 免费版显示升级提示（左对齐，普通文字样式）
-                    Button(action: {
-                        isShowingProSheet = true
-                    }) {
-                        Text(AppText.Pro.upgradeForMoreHistory)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 1)
-                    }
-                    .buttonStyle(.plain)
+                    // 免费版显示升级提示（左对齐，蓝色文字，不可点击）
+                    Text(AppText.Pro.upgradeForMoreHistory)
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 1)
                 }
 
                 Text(AppText.Settings.Storage.historyLimitDesc)
@@ -349,16 +349,10 @@ struct SettingsView: View {
                     Text(AppText.Settings.Storage.imagePreview)
                         .font(.body)
                         .foregroundStyle(.primary)
-                    
-                    if !proManager.isProFeatureEnabled {
-                        Image(systemName: "star.fill")
-                            .font(.caption2)
-                            .foregroundStyle(Color.accentColor)
-                    }
                 }
-                
+
                 Spacer()
-                
+
                 if proManager.isProFeatureEnabled {
                     Toggle("", isOn: $settings.imagePreviewEnabled)
                         .toggleStyle(.switch)
@@ -370,22 +364,22 @@ struct SettingsView: View {
                         isShowingProSheet = true
                     }) {
                         Text(AppText.Pro.proLabel)
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
                             .background(
-                                Capsule()
+                                RoundedRectangle(cornerRadius: 6)
                                     .fill(Color.accentColor)
                             )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            
+
             Text(proManager.isProFeatureEnabled ? AppText.Settings.Storage.imagePreviewDesc : AppText.Pro.upgradeForImagePreview)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(proManager.isProFeatureEnabled ? .secondary : .blue)
                 .padding(.top, 1)
         }
     }

@@ -29,7 +29,7 @@ struct HistoryItemView: View {
         guard let createdAt = item.createdAt else { return "" }
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = .autoupdatingCurrent
-        formatter.unitsStyle = .abbreviated
+        formatter.unitsStyle = .short
         return formatter.localizedString(for: createdAt, relativeTo: Date())
     }
 

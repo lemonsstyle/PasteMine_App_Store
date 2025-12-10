@@ -31,6 +31,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // 同步开机自启动状态
         let settings = AppSettings.load()
         LaunchAtLoginService.shared.setLaunchAtLogin(enabled: settings.launchAtLogin)
+        
+        // 检查 Pro 状态（包括试用状态）
+        Task { @MainActor in
+            ProEntitlementManager.shared.recalcState()
+        }
 
         // 隐藏 Dock 图标（已在 Info.plist 设置 LSUIElement）
 
@@ -74,6 +79,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     func applicationWillTerminate(_ notification: Notification) {
         clipboardMonitor.stop()
         hotKeyManager?.unregister()
+    }
+    
+    func applicationDidBecomeActive(_ notification: Notification) {
+        // 应用返回前台时，重新计算 Pro 状态
+        Task { @MainActor in
+            ProEntitlementManager.shared.recalcState()
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

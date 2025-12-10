@@ -31,6 +31,7 @@ struct HistoryListView: View {
     @State private var imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
     @State private var previewWorkItem: DispatchWorkItem?
     @Binding var showSettings: Bool
+    @Binding var showProSheet: Bool
     
     // 统计所有应用出现次数（使用 bundleId 作为唯一标识）
     var appStatistics: [AppSourceFilter] {
@@ -299,19 +300,19 @@ struct HistoryListView: View {
         alert.alertStyle = .informational
         alert.addButton(withTitle: AppText.Pro.upgradeToPro)
         alert.addButton(withTitle: AppText.Common.cancel)
-        
+
         if let window = NSApp.keyWindow {
-            alert.beginSheetModal(for: window) { response in
+            alert.beginSheetModal(for: window) { [self] response in
                 if response == .alertFirstButtonReturn {
-                    // TODO: 打开 Pro 面板
-                    print("打开 Pro 面板")
+                    // 打开 Pro 面板
+                    showProSheet = true
                 }
             }
         } else {
             let response = alert.runModal()
             if response == .alertFirstButtonReturn {
-                // TODO: 打开 Pro 面板
-                print("打开 Pro 面板")
+                // 打开 Pro 面板
+                showProSheet = true
             }
         }
     }

@@ -23,6 +23,7 @@ class WindowManager: NSObject {
     private func setupWindow() {
         let contentView = ContentView()
             .environment(\.managedObjectContext, DatabaseService.shared.context)
+            .environmentObject(ProEntitlementManager.shared)
         
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 400, height: 600),
