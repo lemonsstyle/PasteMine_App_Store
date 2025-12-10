@@ -311,7 +311,7 @@ struct SettingsView: View {
                     // 免费版显示升级提示（左对齐，蓝色文字，不可点击）
                     Text(AppText.Pro.upgradeForMoreHistory)
                         .font(.caption2)
-                        .foregroundStyle(.blue)
+                        .foregroundColor(.blue)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 1)
                 }
@@ -379,7 +379,7 @@ struct SettingsView: View {
 
             Text(proManager.isProFeatureEnabled ? AppText.Settings.Storage.imagePreviewDesc : AppText.Pro.upgradeForImagePreview)
                 .font(.caption2)
-                .foregroundStyle(proManager.isProFeatureEnabled ? .secondary : .blue)
+                .foregroundColor(proManager.isProFeatureEnabled ? .secondary : .blue)
                 .padding(.top, 1)
         }
     }
