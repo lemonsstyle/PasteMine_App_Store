@@ -64,7 +64,7 @@ struct AppPickerView: View {
                 }
                 .padding(4)
             }
-            .frame(maxHeight: 96)
+            .frame(maxHeight: 120)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)

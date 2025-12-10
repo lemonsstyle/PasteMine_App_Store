@@ -161,5 +161,91 @@ enum AppText {
         static var pinned: String { t("固定", "Pin") }
         static var unpinned: String { t("取消固定", "Unpin") }
         static var noMatches: String { t("没有找到匹配的记录", "No matching records") }
+        static var ok: String { t("确定", "OK") }
+        static var close: String { t("关闭", "Close") }
+    }
+    
+    // MARK: - Pro 功能
+    enum Pro {
+        // Pro 按钮
+        static var proButton: String { t("PRO", "PRO") }
+        static var upgradeTooltip: String { t("升级到 PasteMine Pro", "Upgrade to PasteMine Pro") }
+        
+        // Pro 面板标题
+        static var sheetTitle: String { t("升级到 PasteMine Pro", "Upgrade to PasteMine Pro") }
+        static var sheetSubtitle: String { t("更长的历史、更强的预览、更顺手的整理。", "Longer history, better preview, smarter organization.") }
+        static var upgradeExperience: String { t("全面升级你的剪贴板体验", "Enhance your clipboard experience") }
+        
+        // 特性卡片
+        enum Features {
+            static var longerHistoryTitle: String { t("更长历史", "Longer History") }
+            static var longerHistoryDesc: String { t("免费版仅保留最近 50 条，Pro 可选择 200 条或几乎无限（999 条）。", "Free: 50 items. Pro: up to 200 or 999 items.") }
+            
+            static var hoverPreviewTitle: String { t("悬停预览", "Hover Preview") }
+            static var hoverPreviewDesc: String { t("将鼠标停在图片记录上，无需打开即可查看原图细节。", "Hover over images to preview full details without opening.") }
+            
+            static var sourceTagsTitle: String { t("来源分类", "Source Tags") }
+            static var sourceTagsDesc: String { t("为复制内容添加 Chrome / 微信 / 代码 等标签，后续查找更快、更有条理。", "Tag content by source (Chrome, WeChat, etc.) for faster, organized search.") }
+            
+            static var unlimitedPinsTitle: String { t("无限固定", "Unlimited Pins") }
+            static var unlimitedPinsDesc: String { t("免费版最多固定 1 条，Pro 可固定任意数量的重要记录。", "Free: 1 pin. Pro: unlimited important items.") }
+        }
+        
+        // 按钮文案
+        static var purchaseButton: String { t("立即升级到 Pro", "Upgrade to Pro Now") }
+        static var purchaseButtonTrial: String { t("现在买断，体验不中断", "Buy Now, Keep the Experience") }
+        static var purchaseButtonExpired: String { t("解锁 PasteMine Pro", "Unlock PasteMine Pro") }
+        static var alreadyPurchased: String { t("已解锁 PasteMine Pro", "PasteMine Pro Unlocked") }
+        
+        static var oneTimePurchase: String { t("一次性买断 · 未来版本持续使用", "One-time purchase · Lifetime updates") }
+        static var restorePurchase: String { t("恢复购买", "Restore Purchase") }
+        static var sendFeedback: String { t("给开发者反馈…", "Send Feedback…") }
+        static var continueFreePlan: String { t("继续使用免费版", "Continue with Free") }
+        
+        // 免费试用
+        static var freeTrialButton: String { t("免费体验 7 天", "Free 7-Day Trial") }
+        static var or: String { t("或", "or") }
+        
+        // 上下文横幅
+        static func trialActiveBanner(daysLeft: Int) -> String {
+            t("免费体验 PasteMine Pro（还剩 \(daysLeft) 天）。到期自动恢复为免费版，无自动扣费。",
+              "Free trial active (\(daysLeft) days left). Will revert to Free plan. No auto-charge.")
+        }
+        
+        static var trialExpiredBanner: String {
+            t("PasteMine Pro 免费体验已结束，当前已回到免费版。如需继续使用 Pro 功能，请解锁 PasteMine Pro。",
+              "Free trial ended. Now on Free plan. Unlock Pro to continue using Pro features.")
+        }
+        
+        static var purchasedBanner: String {
+            t("你已经解锁 PasteMine Pro，感谢支持！",
+              "PasteMine Pro unlocked. Thank you for your support!")
+        }
+        
+        // 购买结果提示
+        static var purchaseSuccess: String { t("购买成功！感谢支持 PasteMine Pro！", "Purchase successful! Thank you for supporting PasteMine Pro!") }
+        static var restoreSuccess: String { t("恢复购买成功！", "Purchase restored successfully!") }
+        static func purchaseFailed(error: String) -> String {
+            t("购买失败：\(error)", "Purchase failed: \(error)")
+        }
+        static var alertTitle: String { t("提示", "Notice") }
+        
+        // 设置页相关
+        static var freeVersionBadge: String { t("免费版: 50 条", "Free: 50 items") }
+        static var upgradeForMoreHistory: String { t("升级到 Pro 解锁 200/无限条，免费版仅 50 条", "Upgrade to Pro for 200/unlimited items, free version limited to 50") }
+        static var proLabel: String { t("Pro", "Pro") }
+        static var upgradeForImagePreview: String { t("升级到 Pro 解锁图片悬停预览功能", "Upgrade to Pro to unlock image hover preview") }
+        
+        // 固定限制
+        static var unlimitedPinsTitle: String { t("升级到 Pro 解锁无限固定", "Upgrade to Pro for Unlimited Pins") }
+        static var unlimitedPinsMessage: String {
+            t("免费版最多固定 1 条记录，Pro 用户可以固定任意数量的重要内容。",
+              "Free plan: 1 pin. Pro: unlimited pins for important items.")
+        }
+        static var upgradeToPro: String { t("升级到 Pro", "Upgrade to Pro") }
+        
+        // 清空历史确认
+        static var clearAllTitle: String { t("确定要清空所有历史记录吗？", "Clear all history?") }
+        static var clearAllMessage: String { t("此操作不可撤销", "This action cannot be undone.") }
     }
 }

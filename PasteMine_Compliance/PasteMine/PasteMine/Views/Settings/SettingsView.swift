@@ -276,15 +276,19 @@ struct SettingsView: View {
                         .font(.body)
                         .foregroundStyle(.primary)
 
+                    Spacer()
+
+                    // Pro 标签（类似图片悬停预览的样式）
                     if !proManager.isProFeatureEnabled {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .font(.caption2)
-                                .foregroundStyle(.blue)
-                            Text(AppText.Pro.freeVersionBadge)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                        Text(AppText.Pro.proLabel)
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(Color.accentColor)
+                            )
                     }
                 }
 
