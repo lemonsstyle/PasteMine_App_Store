@@ -154,7 +154,7 @@ struct SettingsView: View {
             }
             .padding(16)
         }
-        .frame(width: 420, height: 580)
+        .frame(width: 420, height: 547)
         .background {
             if #available(macOS 14, *) {
                 Color.clear
@@ -289,8 +289,7 @@ struct SettingsView: View {
                     }
                 }
 
-                // 免费版和 Pro 版都显示 Picker
-                ZStack {
+                if proManager.isProFeatureEnabled {
                     Picker("", selection: $settings.proMaxHistoryCount) {
                         ForEach(AppSettings.proHistoryCountOptions, id: \.self) { count in
                             Text(count == 999 ? AppText.Settings.Storage.historyPermanent : AppText.Settings.Storage.historyCount(count)).tag(count)
@@ -300,36 +299,21 @@ struct SettingsView: View {
                     .onChange(of: settings.proMaxHistoryCount) { _ in
                         settings.save()
                     }
-                    .disabled(!proManager.isProFeatureEnabled)
-
-                    // 免费版：在 200 和无限选项上添加遮挡
-                    if !proManager.isProFeatureEnabled {
-                        GeometryReader { geometry in
-                            HStack(spacing: 0) {
-                                // 50 选项区域（可点击，不遮挡）
-                                Color.clear
-                                    .frame(width: geometry.size.width / 3)
-
-                                // 200 和无限选项区域（遮挡）
-                                Rectangle()
-                                    .fill(Color.black.opacity(0.3))
-                                    .frame(width: geometry.size.width * 2 / 3)
-                                    .overlay(
-                                        VStack {
-                                            Image(systemName: "lock.fill")
-                                                .font(.caption)
-                                            Text(AppText.Pro.proLabel)
-                                                .font(.caption2)
-                                        }
-                                        .foregroundColor(.white)
-                                    )
-                                    .onTapGesture {
-                                        isShowingProSheet = true
-                                    }
-                            }
+                } else {
+                    // 免费版显示升级提示
+                    Button(action: {
+                        isShowingProSheet = true
+                    }) {
+                        HStack {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                            Text(AppText.Pro.upgradeForMoreHistory)
+                                .font(.caption)
                         }
-                        .allowsHitTesting(true)
+                        .foregroundColor(.accentColor)
+                        .padding(.vertical, 6)
                     }
+                    .buttonStyle(.plain)
                 }
 
                 Text(AppText.Settings.Storage.historyLimitDesc)
