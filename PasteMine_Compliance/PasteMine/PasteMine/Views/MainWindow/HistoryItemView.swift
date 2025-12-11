@@ -200,12 +200,19 @@ struct HistoryItemView: View {
 
         // 阶段3: 旋转晃动 (开始于 0.3s，持续 0.6s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // 使用 Spring 动画模拟钟摆效果
-            withAnimation(
-                .spring(response: 0.3, dampingFraction: 0.3, blendDuration: 0)
-                    .repeatCount(3, autoreverses: true)
-            ) {
-                rotationAngle = 30  // 向右旋转 30 度
+            // 首先设置初始位置（向左 15°）
+            rotationAngle = -15
+
+            // 短暂延迟后开始摆动动画
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                // 使用 Spring 动画模拟钟摆效果
+                // 从 -15° 摆动到 +15°，总摆幅 30°
+                withAnimation(
+                    .spring(response: 0.3, dampingFraction: 0.3, blendDuration: 0)
+                        .repeatCount(3, autoreverses: true)
+                ) {
+                    rotationAngle = 15  // 向右摆动 15°（相对于中心）
+                }
             }
         }
 
