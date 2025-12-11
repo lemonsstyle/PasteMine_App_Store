@@ -114,24 +114,7 @@ enum AppText {
         static var filterAll: String { t("全部", "All") }
         static var filterMore: String { "..." }
     }
-    
-    // MARK: - 引导页面
-    enum Onboarding {
-        static var title: String { t("欢迎使用 PasteMine", "Welcome to PasteMine") }
-        static var step1Title: String { t("📋 自动记录", "📋 Auto capture") }
-        static var step1Desc: String { t("自动记录你的复制内容\n支持文本和图片", "Automatically record your copies\nSupports text & images") }
-        
-        static var step2Title: String { t("⌨️ 快捷访问", "⌨️ Quick access") }
-        static var step2Desc: String { t("使用快捷键快速调出历史\n默认：⌘⇧V", "Use shortcut to open history\nDefault: ⌘⇧V") }
-        
-        static var step3Title: String { t("🔒 隐私保护", "🔒 Privacy") }
-        static var step3Desc: String { t("可设置忽略特定应用\n保护敏感信息", "Ignore specific apps to protect sensitive info") }
-        
-        static var getStarted: String { t("开始使用", "Get started") }
-        static var permissionTitle: String { t("需要授予权限", "Permission required") }
-        static var permissionMessage: String { t("为了正常工作，请在系统设置中授予通知权限", "Grant notification permission in System Settings to proceed.") }
-    }
-    
+
     // MARK: - 通知
     enum Notifications {
         static var copyTitle: String { t("📋 剪贴板已更新", "📋 Clipboard updated") }
@@ -146,8 +129,9 @@ enum AppText {
     
     // MARK: - 右键菜单
     enum Menu {
-        static var showWindow: String { t("显示窗口", "Show window") }
+        static var showWindow: String { t("显示窗口", "Show Window") }
         static var quit: String { t("退出", "Quit") }
+        static var clipboardHistory: String { t("剪贴板历史", "Clipboard History") }
     }
     
     // MARK: - 通用
@@ -253,13 +237,6 @@ enum AppText {
         // 清空历史确认
         static var clearAllTitle: String { t("确定要清空所有历史记录吗？", "Clear all history?") }
         static var clearAllMessage: String { t("此操作不可撤销", "This action cannot be undone.") }
-    }
-
-    // MARK: - 菜单
-    enum Menu {
-        static var showWindow: String { t("显示窗口", "Show Window") }
-        static var quit: String { t("退出", "Quit") }
-        static var clipboardHistory: String { t("剪贴板历史", "Clipboard History") }
     }
 
     // MARK: - 引导页面
