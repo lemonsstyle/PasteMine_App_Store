@@ -265,6 +265,118 @@ enum AppText {
     // MARK: - 引导页面
     enum Onboarding {
         static var title: String { t("欢迎使用 PasteMine", "Welcome to PasteMine") }
+
+        // 欢迎页面
+        static var welcomeTitle: String { t("PasteMine", "PasteMine") }
+        static var welcomeSlogan: String {
+            t("从此告别「复制过什么」的烦恼", "Never lose what you copied")
+        }
+
+        // 功能卡片
+        static var feature1Title: String {
+            t("📋 自动保存所有复制", "📋 Auto-save all copies")
+        }
+        static var feature1Desc: String {
+            t("文本、图片、链接...永远不会丢失", "Text, images, links... never lost")
+        }
+
+        static var feature2Title: String {
+            t("⚡️ 一秒唤出历史", "⚡️ Instant access")
+        }
+        static var feature2Desc: String {
+            t("⌘⇧V 快捷键或点击菜单栏图标", "⌘⇧V shortcut or menu bar icon")
+        }
+
+        static var feature3Title: String {
+            t("🎯 智能搜索与筛选", "🎯 Smart search & filter")
+        }
+        static var feature3Desc: String {
+            t("按应用分类、关键词搜索，快速找到内容",
+              "Filter by app, search by keyword, find instantly")
+        }
+
+        static var startSetup: String { t("开始设置", "Start setup") }
+
+        // 通知权限页面
+        static var enableNotifications: String { t("开启通知", "Enable notifications") }
+        static var notificationDesc: String { t("接收剪贴板复制和粘贴提醒", "Get alerts for copy and paste") }
+        static var notificationBenefitsTitle: String {
+            t("通知将帮助您：", "Notifications help you:")
+        }
+        static var benefit1: String {
+            t("确认成功复制长文本或大图片", "Confirm long text or large image copied")
+        }
+        static var benefit2: String {
+            t("自动粘贴完成后的即时反馈", "Instant feedback after auto-paste")
+        }
+        static var benefit3: String {
+            t("历史记录达到上限时提醒", "Alert when history limit reached")
+        }
+        static var benefit4: String {
+            t("检测到敏感内容时的隐私提示", "Privacy alert for sensitive content")
+        }
+        static var nonIntrusive: String {
+            t("所有通知均为轻量级，不会打断您的工作", "All notifications are lightweight and non-intrusive")
+        }
+
+        // 辅助功能页面
+        static var enableAccessibility: String { t("开启辅助功能", "Enable Accessibility") }
+        static var unlockCoreFeatures: String {
+            t("解锁 PasteMine 的核心能力", "Unlock PasteMine's core features")
+        }
+        static var withoutPermission: String { t("无权限", "Without") }
+        static var withPermission: String { t("有权限", "With") }
+        static var withoutDesc: String { t("只能查看\n手动复制", "View only\nManual copy") }
+        static var withDesc: String {
+            t("一键粘贴\n全局快捷键", "One-click paste\nGlobal shortcut")
+        }
+        static var setupSteps: String { t("设置步骤：", "Setup:") }
+        static var step1Simple: String {
+            t("点击按钮打开「系统设置」", "Open System Settings")
+        }
+        static var step2Simple: String {
+            t("找到「辅助功能」并勾选 PasteMine", "Find Accessibility and check PasteMine")
+        }
+        static var step3Simple: String {
+            t("输入密码确认（可能需要）", "Enter password if prompted")
+        }
+        static var securityPromise: String {
+            t("PasteMine 仅用于粘贴操作，不会访问其他应用数据",
+              "PasteMine only uses this for paste, no data access")
+        }
+
+        // 完成页面
+        static var setupComplete: String { t("设置完成！", "Setup Complete!") }
+        static var nowReady: String {
+            t("现在可以开始使用 PasteMine 了", "You're ready to use PasteMine")
+        }
+        static var shortcutLabel: String { t("快捷键", "Shortcut") }
+        static var shortcutDesc: String {
+            t("随时唤出剪贴板历史", "Open clipboard history anytime")
+        }
+        static var quickStartLabel: String { t("快速上手", "Quick start") }
+        static var quickTip1: String {
+            t("复制任何内容，PasteMine 自动记录", "Copy anything, PasteMine auto-saves")
+        }
+        static var quickTip2: String {
+            t("点击历史记录即可自动粘贴", "Click history item to auto-paste")
+        }
+        static var quickTip3: String {
+            t("搜索框支持关键词和应用筛选", "Search by keyword or filter by app")
+        }
+        static var tryNow: String { t("立即体验", "Try it now") }
+        static var startLater: String { t("稍后开始", "Start later") }
+        static var grantPermission: String { t("授予权限", "Grant permission") }
+        static var maybeLater: String { t("稍后设置", "Maybe later") }
+        static var nextStep: String { t("下一步", "Next") }
+        static var permissionDenied: String { t("权限已被拒绝", "Permission denied") }
+        static var enableInSettings: String { t("请在系统设置中手动开启", "Please enable it in System Settings") }
+        static var missingPermissions: String {
+            t("您可以稍后在系统设置中开启缺失的权限",
+              "You can enable missing permissions later in System Settings")
+        }
+        static var notificationLabel: String { t("通知权限", "Notification") }
+        static var accessibilityLabel: String { t("辅助功能权限", "Accessibility") }
     }
 
     // MARK: - 辅助功能权限
