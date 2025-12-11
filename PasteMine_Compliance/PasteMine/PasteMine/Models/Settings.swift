@@ -59,6 +59,9 @@ struct AppSettings: Codable {
     var ignoredPasteboardTypes: [String] = AppSettings.defaultIgnoredPasteboardTypes  // 忽略的剪贴板类型列表
     var ignoreTypesEnabled: Bool = true  // 是否启用忽略类型功能（默认开启）
     var clearOnQuit: Bool = false  // 退出时清空剪贴板
+
+    // Pro 提示
+    var hidePinLimitAlert: Bool = false  // 隐藏固定数量限制提示
     
     // 存储到 UserDefaults
     static let key = "app_settings"

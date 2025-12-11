@@ -10,8 +10,10 @@ import SwiftUI
 struct HistoryItemView: View {
     let item: ClipboardItem
     var isSelected: Bool = false
+    var showLockAnimation: Bool = false
     @State private var isHovered = false
     @State private var cachedImage: NSImage? = nil
+    @State private var shakeOffset: CGFloat = 0
     var onPinToggle: ((ClipboardItem) -> Void)?
     var onHoverChanged: ((Bool) -> Void)?
 
@@ -89,17 +91,38 @@ struct HistoryItemView: View {
 
                 Spacer()
 
-                // Pin 按钮
+                // Pin 按钮或锁图标
                 Button(action: {
                     onPinToggle?(item)
                 }) {
-                    Text("📌")
-                        .font(.system(size: 14))
-                        .foregroundColor(item.isPinned ? .blue : .secondary)
-                        .opacity((isHovered || item.isPinned) ? 1.0 : 0.0)
+                    if showLockAnimation {
+                        // 显示蓝色锁图标
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.blue)
+                            .offset(x: shakeOffset)
+                    } else {
+                        // 显示固定图标
+                        Text("📌")
+                            .font(.system(size: 14))
+                            .foregroundColor(item.isPinned ? .blue : .secondary)
+                            .opacity((isHovered || item.isPinned) ? 1.0 : 0.0)
+                    }
                 }
                 .buttonStyle(.plain)
                 .help(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned)
+                .onChange(of: showLockAnimation) { newValue in
+                    if newValue {
+                        // 触发晃动动画
+                        withAnimation(.easeInOut(duration: 0.1).repeatCount(3, autoreverses: true)) {
+                            shakeOffset = 3
+                        }
+                        // 动画结束后重置
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            shakeOffset = 0
+                        }
+                    }
+                }
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 12)
