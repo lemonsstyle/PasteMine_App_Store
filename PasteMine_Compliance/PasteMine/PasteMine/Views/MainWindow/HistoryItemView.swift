@@ -13,7 +13,9 @@ struct HistoryItemView: View {
     var showLockAnimation: Bool = false
     @State private var isHovered = false
     @State private var cachedImage: NSImage? = nil
-    @State private var shakeOffset: CGFloat = 0
+    @State private var rotationAngle: Double = 0       // 旋转角度
+    @State private var iconOpacity: Double = 1.0       // 固定图标透明度
+    @State private var lockIconOpacity: Double = 0.0   // 锁图标透明度
     var onPinToggle: ((ClipboardItem) -> Void)?
     var onHoverChanged: ((Bool) -> Void)?
 
@@ -95,32 +97,27 @@ struct HistoryItemView: View {
                 Button(action: {
                     onPinToggle?(item)
                 }) {
-                    if showLockAnimation {
-                        // 显示蓝色锁图标
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.blue)
-                            .offset(x: shakeOffset)
-                    } else {
-                        // 显示固定图标
+                    ZStack {
+                        // 固定图标（带透明度）
                         Text("📌")
                             .font(.system(size: 14))
                             .foregroundColor(item.isPinned ? .blue : .secondary)
-                            .opacity((isHovered || item.isPinned) ? 1.0 : 0.0)
+                            .opacity((isHovered || item.isPinned) ? iconOpacity : 0.0)
+
+                        // 锁图标（带透明度和旋转）
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.blue)
+                            .rotationEffect(Angle(degrees: rotationAngle), anchor: .top)
+                            .opacity(lockIconOpacity)
                     }
+                    .frame(width: 20, height: 20)
                 }
                 .buttonStyle(.plain)
                 .help(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned)
                 .onChange(of: showLockAnimation) { newValue in
                     if newValue {
-                        // 触发晃动动画
-                        withAnimation(.easeInOut(duration: 0.1).repeatCount(3, autoreverses: true)) {
-                            shakeOffset = 3
-                        }
-                        // 动画结束后重置
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            shakeOffset = 0
-                        }
+                        performLockAnimation()
                     }
                 }
             }
@@ -184,6 +181,47 @@ struct HistoryItemView: View {
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
             }
+        }
+    }
+
+    // 执行完整的锁动画序列
+    private func performLockAnimation() {
+        // 阶段1: 固定图标淡出 (0.15s)
+        withAnimation(.easeOut(duration: 0.15)) {
+            iconOpacity = 0.0
+        }
+
+        // 阶段2: 锁图标淡入 (0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.easeIn(duration: 0.15)) {
+                lockIconOpacity = 1.0
+            }
+        }
+
+        // 阶段3: 旋转晃动 (开始于 0.3s，持续 0.6s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // 使用 Spring 动画模拟钟摆效果
+            withAnimation(
+                .spring(response: 0.3, dampingFraction: 0.3, blendDuration: 0)
+                    .repeatCount(3, autoreverses: true)
+            ) {
+                rotationAngle = 30  // 向右旋转 30 度
+            }
+        }
+
+        // 阶段4: 锁图标淡出 (开始于 0.9s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            withAnimation(.easeOut(duration: 0.15)) {
+                lockIconOpacity = 0.0
+            }
+        }
+
+        // 阶段5: 固定图标淡入 + 重置状态 (开始于 1.05s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) {
+            withAnimation(.easeIn(duration: 0.15)) {
+                iconOpacity = 1.0
+            }
+            rotationAngle = 0  // 重置旋转角度
         }
     }
 }
