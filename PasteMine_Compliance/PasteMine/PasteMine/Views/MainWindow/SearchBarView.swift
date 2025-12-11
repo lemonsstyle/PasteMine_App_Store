@@ -27,11 +27,13 @@ struct AppSourceFilter: Equatable {
 struct SearchBarView: View {
     @Binding var searchText: String
     @Binding var selectedFilter: AppSourceFilter?
+    @Binding var showProSheet: Bool
     let topApps: [AppSourceFilter] // 前2个最常用的应用
     let allApps: [AppSourceFilter]  // 所有应用（按次数排序）
     @State private var isHovered = false
     @State private var showAllApps = false
     @State private var iconCache: [String: NSImage] = [:] // 图标缓存
+    @EnvironmentObject private var proManager: ProEntitlementManager
 
     var body: some View {
         VStack(spacing: 8) {
@@ -94,6 +96,12 @@ struct SearchBarView: View {
                                 count: app.count,
                                 isSelected: selectedFilter == app,
                                 action: {
+                                    // 免费用户点击应用图标弹出 Pro 界面
+                                    if !proManager.isProFeatureEnabled {
+                                        showProSheet = true
+                                        return
+                                    }
+                                    // Pro 用户正常使用筛选功能
                                     withAnimation(.smooth(duration: 0.2)) {
                                         selectedFilter = app
                                         showAllApps = false
@@ -131,6 +139,12 @@ struct SearchBarView: View {
                                 count: app.count,
                                 isSelected: selectedFilter == app,
                                 action: {
+                                    // 免费用户点击应用图标弹出 Pro 界面
+                                    if !proManager.isProFeatureEnabled {
+                                        showProSheet = true
+                                        return
+                                    }
+                                    // Pro 用户正常使用筛选功能
                                     withAnimation(.smooth(duration: 0.2)) {
                                         selectedFilter = app
                                         showAllApps = false

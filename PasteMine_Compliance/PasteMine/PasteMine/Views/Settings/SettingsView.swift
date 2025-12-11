@@ -277,24 +277,6 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
 
                     Spacer()
-
-                    // Pro 标签（圆角矩形，可点击）
-                    if !proManager.isProFeatureEnabled {
-                        Button(action: {
-                            isShowingProSheet = true
-                        }) {
-                            Text(AppText.Pro.proLabel)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(Color.accentColor)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
 
                 if proManager.isProFeatureEnabled {
@@ -308,12 +290,18 @@ struct SettingsView: View {
                         settings.save()
                     }
                 } else {
-                    // 免费版显示升级提示（左对齐，蓝色文字，不可点击）
-                    Text(AppText.Pro.upgradeForMoreHistory)
-                        .font(.caption2)
-                        .foregroundColor(.blue)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 1)
+                    // 免费版显示升级提示（左对齐，蓝色文字，可点击）
+                    Button(action: {
+                        isShowingProSheet = true
+                    }) {
+                        Text(AppText.Pro.upgradeForMoreHistory)
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 1)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 Text(AppText.Settings.Storage.historyLimitDesc)
@@ -359,28 +347,28 @@ struct SettingsView: View {
                         .onChange(of: settings.imagePreviewEnabled) { _ in
                             settings.save()
                         }
-                } else {
-                    Button(action: {
-                        isShowingProSheet = true
-                    }) {
-                        Text(AppText.Pro.proLabel)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.accentColor)
-                            )
-                    }
-                    .buttonStyle(.plain)
                 }
             }
 
-            Text(proManager.isProFeatureEnabled ? AppText.Settings.Storage.imagePreviewDesc : AppText.Pro.upgradeForImagePreview)
-                .font(.caption2)
-                .foregroundColor(proManager.isProFeatureEnabled ? .secondary : .blue)
-                .padding(.top, 1)
+            if proManager.isProFeatureEnabled {
+                Text(AppText.Settings.Storage.imagePreviewDesc)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 1)
+            } else {
+                // 免费版显示升级提示（可点击）
+                Button(action: {
+                    isShowingProSheet = true
+                }) {
+                    Text(AppText.Pro.upgradeForImagePreview)
+                        .font(.caption2)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 1)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 

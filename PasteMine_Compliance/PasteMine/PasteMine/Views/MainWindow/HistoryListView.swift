@@ -115,6 +115,7 @@ struct HistoryListView: View {
             SearchBarView(
                 searchText: $searchText,
                 selectedFilter: $selectedFilter,
+                showProSheet: $showProSheet,
                 topApps: topApps,
                 allApps: appStatistics
             )
