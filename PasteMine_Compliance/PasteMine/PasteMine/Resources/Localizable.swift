@@ -163,6 +163,12 @@ enum AppText {
         static var noMatches: String { t("没有找到匹配的记录", "No matching records") }
         static var ok: String { t("确定", "OK") }
         static var close: String { t("关闭", "Close") }
+
+        // 快捷键录制
+        static var recordShortcut: String { t("录制", "Record") }
+        static var finishRecording: String { t("完成", "Done") }
+        static var resetShortcut: String { t("重置", "Reset") }
+        static var pressShortcut: String { t("按下快捷键...", "Press shortcut...") }
     }
     
     // MARK: - Pro 功能
