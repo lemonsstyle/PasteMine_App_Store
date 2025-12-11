@@ -194,7 +194,7 @@ enum AppText {
             static var sourceTagsDesc: String { t("为复制内容添加 Chrome / 微信 / 代码 等标签，后续查找更快、更有条理。", "Tag content by source (Chrome, WeChat, etc.) for faster, organized search.") }
             
             static var unlimitedPinsTitle: String { t("无限固定", "Unlimited Pins") }
-            static var unlimitedPinsDesc: String { t("免费版最多固定 1 条，Pro 可固定任意数量的重要记录。", "Free: 1 pin. Pro: unlimited important items.") }
+            static var unlimitedPinsDesc: String { t("免费版最多固定 2 条，Pro 可固定任意数量的重要记录。", "Free: 2 pins. Pro: unlimited important items.") }
         }
         
         // 按钮文案
@@ -245,8 +245,8 @@ enum AppText {
         // 固定限制
         static var unlimitedPinsTitle: String { t("升级到 Pro 解锁无限固定", "Upgrade to Pro for Unlimited Pins") }
         static var unlimitedPinsMessage: String {
-            t("免费版最多固定 1 条记录，Pro 用户可以固定任意数量的重要内容。",
-              "Free plan: 1 pin. Pro: unlimited pins for important items.")
+            t("免费版最多固定 2 条记录，Pro 用户可以固定任意数量的重要内容。",
+              "Free plan: 2 pins. Pro: unlimited pins for important items.")
         }
         static var upgradeToPro: String { t("升级到 Pro", "Upgrade to Pro") }
         

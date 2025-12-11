@@ -123,7 +123,7 @@ struct HistoryListView: View {
             if !hasAccessibilityPermission {
                 PermissionBannerView(
                     title: L10n.text("未授予辅助功能权限", "Accessibility permission not granted"),
-                    message: L10n.text("自动粘贴将降级为仅复制。前往"系统设置 > 隐私与安全 > 辅助功能 > 点击+ 选择 PasteMine"开启权限即可恢复。", "Auto-paste will fall back to copy only. Go to System Settings > Privacy & Security > Accessibility > Click + and select PasteMine to enable."),
+                    message: L10n.text("自动粘贴将降级为仅复制。前往【系统设置 > 隐私与安全 > 辅助功能 > 点击+ 选择 PasteMine】开启权限即可恢复。", "Auto-paste will fall back to copy only. Go to System Settings > Privacy & Security > Accessibility > Click + and select PasteMine to enable."),
                     actionTitle: L10n.text("前往设置", "Open Settings"),
                     action: openAccessibilitySettings
                 )
@@ -268,14 +268,14 @@ struct HistoryListView: View {
         if !item.isPinned {
             // 统计当前已固定数量
             let pinnedCount = items.filter { $0.isPinned }.count
-            
-            // 免费版只能固定 1 条
-            if !proManager.isProFeatureEnabled && pinnedCount >= 1 {
+
+            // 免费版只能固定 2 条
+            if !proManager.isProFeatureEnabled && pinnedCount >= 2 {
                 showProUpgradeAlert()
                 return
             }
         }
-        
+
         withAnimation(.easeOut(duration: 0.2)) {
             item.isPinned.toggle()
             if item.isPinned {
