@@ -31,6 +31,7 @@ struct HistoryListView: View {
     @State private var imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
     @State private var previewWorkItem: DispatchWorkItem?
     @State private var isPinLimitTooltipVisible = false  // 显示固定限制气泡提示
+    @State private var isSourceFilterTooltipVisible = false  // 显示来源筛选限制气泡提示
     @State private var lockedItemID: UUID?  // 触发锁图标动画的项ID
     @Binding var showSettings: Bool
     @Binding var showProSheet: Bool
@@ -118,6 +119,7 @@ struct HistoryListView: View {
                 searchText: $searchText,
                 selectedFilter: $selectedFilter,
                 showProSheet: $showProSheet,
+                isSourceFilterTooltipVisible: $isSourceFilterTooltipVisible,
                 topApps: topApps,
                 allApps: appStatistics
             )
@@ -217,8 +219,17 @@ struct HistoryListView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(999)
             }
+
+            // 来源筛选限制气泡提示
+            if isSourceFilterTooltipVisible {
+                SourceFilterTooltipView()
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(999)
+            }
         }
         .animation(.spring(response: 0.3), value: isPinLimitTooltipVisible)
+        .animation(.spring(response: 0.3), value: isSourceFilterTooltipVisible)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification, object: nil)) { _ in
             hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
         }
