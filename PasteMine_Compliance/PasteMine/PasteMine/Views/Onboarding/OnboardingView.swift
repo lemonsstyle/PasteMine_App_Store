@@ -770,7 +770,7 @@ struct PermissionStatusRow: View {
             Image(systemName: isGranted ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                 .foregroundStyle(isGranted ? .green : .orange)
 
-            Text(isGranted ? "已授权" : "未授权")
+            Text(isGranted ? AppText.PermissionStatus.granted : AppText.PermissionStatus.notGranted)
                 .font(.caption)
                 .foregroundStyle(isGranted ? .green : .orange)
         }

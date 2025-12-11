@@ -119,16 +119,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "剪贴板历史")
+            button.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: AppText.Menu.clipboardHistory)
             button.action = #selector(toggleWindow)
             button.target = self
         }
         
         // 创建菜单
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "显示窗口", action: #selector(showWindow), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: AppText.Menu.showWindow, action: #selector(showWindow), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: AppText.Menu.quit, action: #selector(quit), keyEquivalent: "q"))
         
         // 右键点击显示菜单
         if let button = statusItem?.button {
@@ -176,9 +176,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "显示窗口", action: #selector(showWindow), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: AppText.Menu.showWindow, action: #selector(showWindow), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: AppText.Menu.quit, action: #selector(quit), keyEquivalent: "q"))
         return menu
     }
     
@@ -211,7 +211,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 
         onboardingWindow?.center()
         onboardingWindow?.contentViewController = hostingController
-        onboardingWindow?.title = "欢迎使用 PasteMine"
+        onboardingWindow?.title = AppText.Onboarding.title
         onboardingWindow?.titlebarAppearsTransparent = true
         onboardingWindow?.isMovableByWindowBackground = true
         onboardingWindow?.level = .floating

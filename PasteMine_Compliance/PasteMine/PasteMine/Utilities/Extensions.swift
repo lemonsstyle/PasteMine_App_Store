@@ -19,17 +19,11 @@ extension NSApplication {
     func checkAccessibilityPermission() {
         if !hasAccessibilityPermission {
             let alert = NSAlert()
-            alert.messageText = "需要辅助功能权限"
-            alert.informativeText = """
-            PasteMine 需要辅助功能权限来实现：
-            • 自动粘贴功能
-            • 全局快捷键 (⌘⇧V)
-            
-            请在系统偏好设置中授予权限。
-            """
+            alert.messageText = AppText.Accessibility.permissionRequired
+            alert.informativeText = AppText.Accessibility.permissionMessage
             alert.alertStyle = .informational
-            alert.addButton(withTitle: "打开系统偏好设置")
-            alert.addButton(withTitle: "稍后")
+            alert.addButton(withTitle: AppText.Accessibility.openSystemPreferences)
+            alert.addButton(withTitle: AppText.Accessibility.later)
             
             if alert.runModal() == .alertFirstButtonReturn {
                 // 尝试多种方式打开系统设置

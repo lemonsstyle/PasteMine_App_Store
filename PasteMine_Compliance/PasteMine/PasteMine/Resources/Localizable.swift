@@ -254,4 +254,45 @@ enum AppText {
         static var clearAllTitle: String { t("确定要清空所有历史记录吗？", "Clear all history?") }
         static var clearAllMessage: String { t("此操作不可撤销", "This action cannot be undone.") }
     }
+
+    // MARK: - 菜单
+    enum Menu {
+        static var showWindow: String { t("显示窗口", "Show Window") }
+        static var quit: String { t("退出", "Quit") }
+        static var clipboardHistory: String { t("剪贴板历史", "Clipboard History") }
+    }
+
+    // MARK: - 引导页面
+    enum Onboarding {
+        static var title: String { t("欢迎使用 PasteMine", "Welcome to PasteMine") }
+    }
+
+    // MARK: - 辅助功能权限
+    enum Accessibility {
+        static var permissionRequired: String { t("需要辅助功能权限", "Accessibility Permission Required") }
+        static var permissionMessage: String {
+            t("PasteMine 需要辅助功能权限来实现：\n• 自动粘贴功能\n• 全局快捷键 (⌘⇧V)\n\n请在系统偏好设置中授予权限。",
+              "PasteMine needs accessibility permission for:\n• Auto-paste functionality\n• Global shortcut (⌘⇧V)\n\nPlease grant permission in System Preferences.")
+        }
+        static var openSystemPreferences: String { t("打开系统偏好设置", "Open System Preferences") }
+        static var later: String { t("稍后", "Later") }
+    }
+
+    // MARK: - 应用选择器
+    enum AppPicker {
+        static var selectAppTitle: String { t("选择要忽略的应用", "Select App to Ignore") }
+        static var selectAppMessage: String { t("请选择一个应用程序", "Please select an application") }
+    }
+
+    // MARK: - 权限状态
+    enum PermissionStatus {
+        static var granted: String { t("已授权", "Granted") }
+        static var notGranted: String { t("未授权", "Not Granted") }
+    }
+
+    // MARK: - 购买错误
+    enum PurchaseError {
+        static var productNotLoaded: String { t("产品未加载", "Product Not Loaded") }
+        static var verificationFailed: String { t("交易验证失败", "Transaction Verification Failed") }
+    }
 }

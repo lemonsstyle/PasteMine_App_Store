@@ -59,7 +59,7 @@ class PurchaseManager: ObservableObject {
     func purchasePro() async {
         guard let product = products.first else {
             print("❌ StoreKit: 产品未加载")
-            purchaseState = .failed("产品未加载")
+            purchaseState = .failed(AppText.PurchaseError.productNotLoaded)
             return
         }
         
@@ -156,7 +156,7 @@ class PurchaseManager: ObservableObject {
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified:
-            throw NSError(domain: "PurchaseManager", code: -2, userInfo: [NSLocalizedDescriptionKey: "交易验证失败"])
+            throw NSError(domain: "PurchaseManager", code: -2, userInfo: [NSLocalizedDescriptionKey: AppText.PurchaseError.verificationFailed])
         case .verified(let safe):
             return safe
         }
