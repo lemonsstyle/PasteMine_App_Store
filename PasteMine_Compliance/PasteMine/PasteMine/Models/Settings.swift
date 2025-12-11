@@ -49,6 +49,7 @@ struct AppSettings: Codable {
     var launchAtLogin: Bool = false  // 开机自启动
     var globalShortcut: KeyboardShortcut = .defaultShortcut  // 默认 ⌘⇧V
     var maxHistoryCount: Int = 50  // 默认 50 条
+    var proMaxHistoryCount: Int = 200  // Pro 用户的历史上限（200 或 999）
     var ignoreLargeImages: Bool = false  // 是否忽略大图片（>20MB）
     var imagePreviewEnabled: Bool = false  // 图片悬停预览
     var clipboardHistoryEnabled: Bool = false  // 是否启用剪贴板历史（默认关闭）
@@ -58,6 +59,10 @@ struct AppSettings: Codable {
     var ignoredPasteboardTypes: [String] = AppSettings.defaultIgnoredPasteboardTypes  // 忽略的剪贴板类型列表
     var ignoreTypesEnabled: Bool = true  // 是否启用忽略类型功能（默认开启）
     var clearOnQuit: Bool = false  // 退出时清空剪贴板
+
+    // Pro 提示
+    var hidePinLimitAlert: Bool = false  // 隐藏固定数量限制提示
+    var hideSourceFilterAlert: Bool = false  // 隐藏来源筛选限制提示
     
     // 存储到 UserDefaults
     static let key = "app_settings"
@@ -81,8 +86,11 @@ struct AppSettings: Codable {
         NotificationCenter.default.post(name: .shortcutDidChange, object: nil)
     }
 
-    /// 历史记录数量选项
-    static let historyCountOptions = [50, 200, 999]
+    /// 历史记录数量选项（免费版）
+    static let historyCountOptions = [50]
+
+    /// Pro 历史记录数量选项
+    static let proHistoryCountOptions = [50, 200, 999]
 
     /// 大图片阈值（20MB）
     static let largeImageThreshold = 20

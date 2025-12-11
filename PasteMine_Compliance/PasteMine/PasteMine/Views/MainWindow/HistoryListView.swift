@@ -16,6 +16,7 @@ extension Notification.Name {
 
 struct HistoryListView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject private var proManager: ProEntitlementManager
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \ClipboardItem.createdAt, ascending: false)],
         animation: .default
@@ -29,7 +30,11 @@ struct HistoryListView: View {
     @State private var hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
     @State private var imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
     @State private var previewWorkItem: DispatchWorkItem?
+    @State private var isPinLimitTooltipVisible = false  // 显示固定限制气泡提示
+    @State private var isSourceFilterTooltipVisible = false  // 显示来源筛选限制气泡提示
+    @State private var lockedItemID: UUID?  // 触发锁图标动画的项ID
     @Binding var showSettings: Bool
+    @Binding var showProSheet: Bool
     
     // 统计所有应用出现次数（使用 bundleId 作为唯一标识）
     var appStatistics: [AppSourceFilter] {
@@ -113,6 +118,8 @@ struct HistoryListView: View {
             SearchBarView(
                 searchText: $searchText,
                 selectedFilter: $selectedFilter,
+                showProSheet: $showProSheet,
+                isSourceFilterTooltipVisible: $isSourceFilterTooltipVisible,
                 topApps: topApps,
                 allApps: appStatistics
             )
@@ -120,7 +127,7 @@ struct HistoryListView: View {
             if !hasAccessibilityPermission {
                 PermissionBannerView(
                     title: L10n.text("未授予辅助功能权限", "Accessibility permission not granted"),
-                    message: L10n.text("自动粘贴将降级为仅复制。前往“系统设置 > 隐私与安全 > 辅助功能”开启权限即可恢复。", "Auto-paste will fall back to copy only. Go to System Settings > Privacy & Security > Accessibility to enable."),
+                    message: L10n.text("自动粘贴将降级为仅复制。前往【系统设置 > 隐私与安全 > 辅助功能 > 点击+ 选择 PasteMine】开启权限即可恢复。", "Auto-paste will fall back to copy only. Go to System Settings > Privacy & Security > Accessibility > Click + and select PasteMine to enable."),
                     actionTitle: L10n.text("前往设置", "Open Settings"),
                     action: openAccessibilitySettings
                 )
@@ -143,6 +150,7 @@ struct HistoryListView: View {
                             HistoryItemView(
                                 item: item,
                                 isSelected: index == selectedIndex,
+                                showLockAnimation: lockedItemID == item.id,
                                 onPinToggle: { item in
                                     togglePin(item)
                                 },
@@ -203,6 +211,25 @@ struct HistoryListView: View {
             // 底部操作栏
             BottomActionBar(onClearAll: clearAll, onSettings: { showSettings = true })
         }
+        .overlay(alignment: .top) {
+            // 固定限制气泡提示
+            if isPinLimitTooltipVisible {
+                PinLimitTooltipView()
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(999)
+            }
+
+            // 来源筛选限制气泡提示
+            if isSourceFilterTooltipVisible {
+                SourceFilterTooltipView()
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(999)
+            }
+        }
+        .animation(.spring(response: 0.3), value: isPinLimitTooltipVisible)
+        .animation(.spring(response: 0.3), value: isSourceFilterTooltipVisible)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification, object: nil)) { _ in
             hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
         }
@@ -261,6 +288,27 @@ struct HistoryListView: View {
     }
 
     private func togglePin(_ item: ClipboardItem) {
+        // 如果要固定项目，检查 Pro 权限
+        if !item.isPinned {
+            // 统计当前已固定数量
+            let pinnedCount = items.filter { $0.isPinned }.count
+
+            // 免费版只能固定 2 条
+            if !proManager.isProFeatureEnabled && pinnedCount >= 2 {
+                // 检查是否隐藏提示
+                var settings = AppSettings.load()
+                if settings.hidePinLimitAlert {
+                    // 已隐藏弹窗，显示气泡提示和锁图标动画
+                    showPinLimitTooltip()
+                    triggerLockIconAnimation(for: item)
+                } else {
+                    // 显示升级弹窗
+                    showProUpgradeAlert()
+                }
+                return
+            }
+        }
+
         withAnimation(.easeOut(duration: 0.2)) {
             item.isPinned.toggle()
             if item.isPinned {
@@ -278,11 +326,54 @@ struct HistoryListView: View {
             }
         }
     }
+    
+    private func showProUpgradeAlert() {
+        let alert = NSAlert()
+        alert.messageText = AppText.Pro.unlimitedPinsTitle
+        alert.informativeText = AppText.Pro.unlimitedPinsMessage
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: AppText.Pro.upgradeToPro)
+        alert.addButton(withTitle: AppText.Common.cancel)
+
+        // 添加"不再显示"勾选框
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = L10n.text("不再显示", "Don't show this again")
+
+        if let window = NSApp.keyWindow {
+            alert.beginSheetModal(for: window) { [self] response in
+                // 保存"不再显示"选项
+                if alert.suppressionButton?.state == .on {
+                    var settings = AppSettings.load()
+                    settings.hidePinLimitAlert = true
+                    settings.save()
+                }
+
+                if response == .alertFirstButtonReturn {
+                    // 打开 Pro 面板
+                    showProSheet = true
+                }
+            }
+        } else {
+            let response = alert.runModal()
+
+            // 保存"不再显示"选项
+            if alert.suppressionButton?.state == .on {
+                var settings = AppSettings.load()
+                settings.hidePinLimitAlert = true
+                settings.save()
+            }
+
+            if response == .alertFirstButtonReturn {
+                // 打开 Pro 面板
+                showProSheet = true
+            }
+        }
+    }
 
     private func clearAll() {
         let alert = NSAlert()
-        alert.messageText = L10n.text("确定要清空所有历史记录吗？", "Clear all history?")
-        alert.informativeText = L10n.text("此操作不可撤销", "This action cannot be undone.")
+        alert.messageText = AppText.Pro.clearAllTitle
+        alert.informativeText = AppText.Pro.clearAllMessage
         alert.alertStyle = .warning
         alert.addButton(withTitle: AppText.MainWindow.clearAll)
         alert.addButton(withTitle: AppText.Common.cancel)
@@ -342,7 +433,11 @@ struct HistoryListView: View {
     private func handleHoverPreview(for item: ClipboardItem, hovering: Bool) {
         previewWorkItem?.cancel()
 
-        guard imagePreviewEnabled, item.itemType == .image, let image = item.image else {
+        // 只有 Pro 用户且开启了预览功能才显示
+        guard proManager.isProFeatureEnabled,
+              imagePreviewEnabled,
+              item.itemType == .image,
+              let image = item.image else {
             ImagePreviewWindow.shared.hide()
             return
         }
@@ -356,6 +451,24 @@ struct HistoryListView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: work)
         } else {
             ImagePreviewWindow.shared.hide()
+        }
+    }
+
+    // 显示固定限制气泡提示
+    private func showPinLimitTooltip() {
+        isPinLimitTooltipVisible = true
+        // 2秒后自动隐藏
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            isPinLimitTooltipVisible = false
+        }
+    }
+
+    // 触发锁图标动画
+    private func triggerLockIconAnimation(for item: ClipboardItem) {
+        lockedItemID = item.id
+        // 动画结束后清除状态
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            lockedItemID = nil
         }
     }
 }
@@ -557,7 +670,7 @@ struct PermissionBannerView: View {
     let action: () -> Void
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.yellow)
                 .font(.title3)
@@ -603,13 +716,15 @@ struct KeyboardEventView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = KeyEventHandlingView()
         view.keyHandler = handler
-        DispatchQueue.main.async {
-            view.window?.makeFirstResponder(view)
-        }
         return view
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // 每次更新时，尝试获取焦点
+        DispatchQueue.main.async {
+            nsView.window?.makeFirstResponder(nsView)
+        }
+    }
 
     class KeyEventHandlingView: NSView {
         var keyHandler: ((NSEvent) -> Void)?
@@ -622,7 +737,10 @@ struct KeyboardEventView: NSViewRepresentable {
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            self.window?.makeFirstResponder(self)
+            // 窗口加载时立即获取焦点
+            DispatchQueue.main.async {
+                self.window?.makeFirstResponder(self)
+            }
         }
 
         override func becomeFirstResponder() -> Bool {
@@ -660,3 +778,25 @@ struct ScrollViewConfigurator: NSViewRepresentable {
     }
 }
 
+// 固定限制气泡提示视图
+struct PinLimitTooltipView: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "lock.fill")
+                .foregroundColor(.blue)
+                .font(.system(size: 14))
+
+            Text(L10n.text("免费版最多固定 2 条，升级 Pro 可解锁无限固定", "Free plan: 2 pins max. Upgrade to Pro for unlimited pins"))
+                .font(.system(size: 13))
+                .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        )
+        .padding(.horizontal)
+    }
+}

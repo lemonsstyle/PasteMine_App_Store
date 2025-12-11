@@ -27,11 +27,14 @@ struct AppSourceFilter: Equatable {
 struct SearchBarView: View {
     @Binding var searchText: String
     @Binding var selectedFilter: AppSourceFilter?
+    @Binding var showProSheet: Bool
+    @Binding var isSourceFilterTooltipVisible: Bool  // 来源筛选气泡提示显示状态
     let topApps: [AppSourceFilter] // 前2个最常用的应用
     let allApps: [AppSourceFilter]  // 所有应用（按次数排序）
     @State private var isHovered = false
     @State private var showAllApps = false
     @State private var iconCache: [String: NSImage] = [:] // 图标缓存
+    @EnvironmentObject private var proManager: ProEntitlementManager
 
     var body: some View {
         VStack(spacing: 8) {
@@ -94,6 +97,12 @@ struct SearchBarView: View {
                                 count: app.count,
                                 isSelected: selectedFilter == app,
                                 action: {
+                                    // 免费用户点击应用图标显示弹窗或气泡
+                                    if !proManager.isProFeatureEnabled {
+                                        showSourceFilterAlert()
+                                        return
+                                    }
+                                    // Pro 用户正常使用筛选功能
                                     withAnimation(.smooth(duration: 0.2)) {
                                         selectedFilter = app
                                         showAllApps = false
@@ -131,6 +140,12 @@ struct SearchBarView: View {
                                 count: app.count,
                                 isSelected: selectedFilter == app,
                                 action: {
+                                    // 免费用户点击应用图标显示弹窗或气泡
+                                    if !proManager.isProFeatureEnabled {
+                                        showSourceFilterAlert()
+                                        return
+                                    }
+                                    // Pro 用户正常使用筛选功能
                                     withAnimation(.smooth(duration: 0.2)) {
                                         selectedFilter = app
                                         showAllApps = false
@@ -143,6 +158,68 @@ struct SearchBarView: View {
                 }
                 .frame(height: 34)
             }
+        }
+    }
+
+    // 显示来源筛选限制弹窗或气泡提示
+    private func showSourceFilterAlert() {
+        var settings = AppSettings.load()
+
+        // 如果用户已选择"不再显示"，则显示气泡提示
+        if settings.hideSourceFilterAlert {
+            showSourceFilterTooltip()
+            return
+        }
+
+        // 否则显示完整弹窗
+        let alert = NSAlert()
+        alert.messageText = L10n.text("升级到 Pro 解锁来源分类", "Upgrade to Pro to unlock source filtering")
+        alert.informativeText = L10n.text("为复制内容添加 Chrome / 微信 / 备忘录等标签，便捷查找复制。", "Add tags like Chrome / WeChat / Notes to your clipboard items for quick search and retrieval.")
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: AppText.Pro.upgradeToPro)
+        alert.addButton(withTitle: AppText.Common.cancel)
+
+        // 添加"不再显示"勾选框
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = L10n.text("不再显示", "Don't show this again")
+
+        if let window = NSApp.keyWindow {
+            alert.beginSheetModal(for: window) { [self] response in
+                // 保存"不再显示"选项
+                if alert.suppressionButton?.state == .on {
+                    var updatedSettings = AppSettings.load()
+                    updatedSettings.hideSourceFilterAlert = true
+                    updatedSettings.save()
+                }
+
+                if response == .alertFirstButtonReturn {
+                    // 打开 Pro 面板
+                    showProSheet = true
+                }
+            }
+        } else {
+            let response = alert.runModal()
+
+            // 保存"不再显示"选项
+            if alert.suppressionButton?.state == .on {
+                var updatedSettings = AppSettings.load()
+                updatedSettings.hideSourceFilterAlert = true
+                updatedSettings.save()
+            }
+
+            if response == .alertFirstButtonReturn {
+                // 打开 Pro 面板
+                showProSheet = true
+            }
+        }
+    }
+
+    // 显示来源筛选限制气泡提示
+    private func showSourceFilterTooltip() {
+        isSourceFilterTooltipVisible = true
+        // 2秒后自动隐藏
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            isSourceFilterTooltipVisible = false
         }
     }
     
@@ -265,3 +342,26 @@ struct IconFilterButton: View {
     }
 }
 
+
+// 来源筛选限制气泡提示视图
+struct SourceFilterTooltipView: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "lock.fill")
+                .foregroundColor(.blue)
+                .font(.system(size: 14))
+
+            Text(L10n.text("升级到 Pro 解锁来源分类", "Upgrade to Pro to unlock source filtering"))
+                .font(.system(size: 13))
+                .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        )
+        .padding(.horizontal)
+    }
+}

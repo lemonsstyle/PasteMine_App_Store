@@ -10,8 +10,12 @@ import SwiftUI
 struct HistoryItemView: View {
     let item: ClipboardItem
     var isSelected: Bool = false
+    var showLockAnimation: Bool = false
     @State private var isHovered = false
     @State private var cachedImage: NSImage? = nil
+    @State private var rotationAngle: Double = 0       // 旋转角度
+    @State private var iconOpacity: Double = 1.0       // 固定图标透明度
+    @State private var lockIconOpacity: Double = 0.0   // 锁图标透明度
     var onPinToggle: ((ClipboardItem) -> Void)?
     var onHoverChanged: ((Bool) -> Void)?
 
@@ -29,7 +33,7 @@ struct HistoryItemView: View {
         guard let createdAt = item.createdAt else { return "" }
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = .autoupdatingCurrent
-        formatter.unitsStyle = .abbreviated
+        formatter.unitsStyle = .short
         return formatter.localizedString(for: createdAt, relativeTo: Date())
     }
 
@@ -89,17 +93,33 @@ struct HistoryItemView: View {
 
                 Spacer()
 
-                // Pin 按钮
+                // Pin 按钮或锁图标
                 Button(action: {
                     onPinToggle?(item)
                 }) {
-                    Text("📌")
-                        .font(.system(size: 14))
-                        .foregroundColor(item.isPinned ? .blue : .secondary)
-                        .opacity((isHovered || item.isPinned) ? 1.0 : 0.0)
+                    ZStack {
+                        // 固定图标（带透明度）
+                        Text("📌")
+                            .font(.system(size: 14))
+                            .foregroundColor(item.isPinned ? .blue : .secondary)
+                            .opacity((isHovered || item.isPinned) ? iconOpacity : 0.0)
+
+                        // 锁图标（带透明度和旋转）
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.blue)
+                            .rotationEffect(Angle(degrees: rotationAngle), anchor: .top)
+                            .opacity(lockIconOpacity)
+                    }
+                    .frame(width: 20, height: 20)
                 }
                 .buttonStyle(.plain)
                 .help(item.isPinned ? AppText.Common.unpinned : AppText.Common.pinned)
+                .onChange(of: showLockAnimation) { newValue in
+                    if newValue {
+                        performLockAnimation()
+                    }
+                }
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 12)
@@ -160,6 +180,35 @@ struct HistoryItemView: View {
                 Divider()
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
+            }
+        }
+    }
+
+    // 执行简单的图标切换动画
+    private func performLockAnimation() {
+        // 阶段1: 固定图标淡出 (0.15s)
+        withAnimation(.easeOut(duration: 0.15)) {
+            iconOpacity = 0.0
+        }
+
+        // 阶段2: 锁图标淡入 (0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.easeIn(duration: 0.15)) {
+                lockIconOpacity = 1.0
+            }
+        }
+
+        // 阶段3: 锁图标淡出 (开始于 0.5s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.easeOut(duration: 0.15)) {
+                lockIconOpacity = 0.0
+            }
+        }
+
+        // 阶段4: 固定图标淡入 (开始于 0.65s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
+            withAnimation(.easeIn(duration: 0.15)) {
+                iconOpacity = 1.0
             }
         }
     }

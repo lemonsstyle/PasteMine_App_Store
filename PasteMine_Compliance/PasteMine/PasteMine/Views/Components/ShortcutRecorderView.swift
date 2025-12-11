@@ -17,9 +17,9 @@ struct ShortcutRecorderView: View {
     var body: some View {
         HStack {
             // 显示区域
-            Text(isRecording ? (currentDisplay.isEmpty ? "按下快捷键..." : currentDisplay) : shortcut.displayString)
+            Text(isRecording ? (currentDisplay.isEmpty ? AppText.Common.pressShortcut : currentDisplay) : shortcut.displayString)
                 .font(.system(.body, design: .monospaced))
-                .frame(minWidth: 120)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
                 .background(
@@ -33,9 +33,9 @@ struct ShortcutRecorderView: View {
                 .onTapGesture {
                     startRecording()
                 }
-            
+
             // 录制/完成按钮
-            Button(isRecording ? "完成" : "录制") {
+            Button(isRecording ? AppText.Common.finishRecording : AppText.Common.recordShortcut) {
                 if isRecording {
                     stopRecording()
                 } else {
@@ -43,10 +43,10 @@ struct ShortcutRecorderView: View {
                 }
             }
             .buttonStyle(.bordered)
-            
+
             // 重置按钮
             if shortcut != .defaultShortcut {
-                Button("重置") {
+                Button(AppText.Common.resetShortcut) {
                     shortcut = .defaultShortcut
                 }
                 .buttonStyle(.borderless)
@@ -123,10 +123,10 @@ struct ShortcutRecorderView: View {
 
 #Preview {
     @Previewable @State var shortcut = KeyboardShortcut.defaultShortcut
-    
+
     VStack {
         ShortcutRecorderView(shortcut: $shortcut)
-        Text("当前快捷键：\(shortcut.displayString)")
+        Text(L10n.text("当前快捷键：\(shortcut.displayString)", "Current shortcut: \(shortcut.displayString)"))
     }
     .padding()
 }

@@ -31,6 +31,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // 同步开机自启动状态
         let settings = AppSettings.load()
         LaunchAtLoginService.shared.setLaunchAtLogin(enabled: settings.launchAtLogin)
+        
+        // 检查 Pro 状态（包括试用状态）
+        Task { @MainActor in
+            ProEntitlementManager.shared.recalcState()
+        }
 
         // 隐藏 Dock 图标（已在 Info.plist 设置 LSUIElement）
 
@@ -75,6 +80,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         clipboardMonitor.stop()
         hotKeyManager?.unregister()
     }
+    
+    func applicationDidBecomeActive(_ notification: Notification) {
+        // 应用返回前台时，重新计算 Pro 状态
+        Task { @MainActor in
+            ProEntitlementManager.shared.recalcState()
+        }
+    }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         // 对于 LSUIElement = true 的应用，关闭最后一个窗口不应该终止应用
@@ -107,16 +119,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "剪贴板历史")
+            button.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: AppText.Menu.clipboardHistory)
             button.action = #selector(toggleWindow)
             button.target = self
         }
         
         // 创建菜单
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "显示窗口", action: #selector(showWindow), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: AppText.Menu.showWindow, action: #selector(showWindow), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: AppText.Menu.quit, action: #selector(quit), keyEquivalent: "q"))
         
         // 右键点击显示菜单
         if let button = statusItem?.button {
@@ -164,9 +176,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     
     private func createMenu() -> NSMenu {
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "显示窗口", action: #selector(showWindow), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: AppText.Menu.showWindow, action: #selector(showWindow), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: AppText.Menu.quit, action: #selector(quit), keyEquivalent: "q"))
         return menu
     }
     
@@ -189,17 +201,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         let hostingController = NSHostingController(rootView: onboardingView)
 
         onboardingWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 540, height: 680),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 800),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
 
-        onboardingWindow?.setContentSize(NSSize(width: 540, height: 680))
+        onboardingWindow?.setContentSize(NSSize(width: 600, height: 800))
 
         onboardingWindow?.center()
         onboardingWindow?.contentViewController = hostingController
-        onboardingWindow?.title = "欢迎使用 PasteMine"
+        onboardingWindow?.title = AppText.Onboarding.title
         onboardingWindow?.titlebarAppearsTransparent = true
         onboardingWindow?.isMovableByWindowBackground = true
         onboardingWindow?.level = .floating

@@ -16,87 +16,102 @@ struct OnboardingView: View {
     var body: some View {
         ZStack {
             // Background
-        if #available(macOS 14, *) {
-            Color.clear
-                .background(.ultraThinMaterial)
-        } else {
-            Color(NSColor.windowBackgroundColor)
-    }
+            if #available(macOS 14, *) {
+                Color.clear
+                    .background(.ultraThinMaterial)
+            } else {
+                Color(NSColor.windowBackgroundColor)
+            }
 
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header
-        VStack(spacing: 8) {
-            Image(systemName: "hand.wave.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.blue)
-                .padding(.top, 32)
+                    // Header (only show for steps 1-3, not for welcome step 0)
+                    if currentStep > 0 {
+                        VStack(spacing: 8) {
+                            Image(systemName: "hand.wave.fill")
+                                .font(.system(size: 48))
+                                .foregroundStyle(.blue)
+                                .padding(.top, 20)
 
-            Text(AppText.Onboarding.title)
-                .font(.title)
-                .fontWeight(.bold)
+                            Text(AppText.Onboarding.title)
+                                .font(.title)
+                                .fontWeight(.bold)
 
-            Text(L10n.text("一款优雅的剪贴板历史管理工具", "A delightful clipboard history manager"))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-                    .padding(.bottom, 32)
+                            Text(AppText.Onboarding.welcomeSlogan)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.bottom, 20)
+                    }
 
                     // Steps
-        VStack(spacing: 20) {
+                    VStack(spacing: 20) {
                         if currentStep == 0 {
+                            // Step 0: Welcome
+                            WelcomeStepView(
+                                onContinue: {
+                                    withAnimation {
+                                        currentStep = 1
+                                    }
+                                }
+                            )
+                        } else if currentStep == 1 {
                             // Step 1: notification permission
                             NotificationPermissionStepView(
-                    isGranted: $notificationPermissionGranted,
+                                isGranted: $notificationPermissionGranted,
                                 primaryAction: {
                                     requestNotificationPermission()
                                 },
                                 secondaryAction: {
-                                    currentStep = 1
+                                    withAnimation {
+                                        currentStep = 2
+                                    }
                                 }
-                )
-                        } else if currentStep == 1 {
+                            )
+                        } else if currentStep == 2 {
                             // Step 2: accessibility permission
                             AccessibilityPermissionStepView(
-                    isGranted: $accessibilityPermissionGranted,
+                                isGranted: $accessibilityPermissionGranted,
                                 primaryAction: {
                                     openAccessibilitySettings()
                                 },
                                 secondaryAction: {
-                                    currentStep = 2
+                                    withAnimation {
+                                        currentStep = 3
+                                    }
                                 }
-                )
+                            )
                         } else {
                             // Step 3: completion
-                CompletionStepView(
-                    notificationGranted: notificationPermissionGranted,
-                    accessibilityGranted: accessibilityPermissionGranted,
+                            CompletionStepView(
+                                notificationGranted: notificationPermissionGranted,
+                                accessibilityGranted: accessibilityPermissionGranted,
                                 onComplete: {
                                     completeOnboarding()
                                 }
-                )
-            }
-        }
-                    .frame(minHeight: 480)
-        .animation(.easeInOut, value: currentStep)
-
-                    // Pager dots
-        HStack(spacing: 8) {
-            ForEach(0..<3) { index in
-                Circle()
-                    .fill(currentStep == index ? Color.blue : Color.gray.opacity(0.3))
-                    .frame(width: 8, height: 8)
-            }
+                            )
+                        }
                     }
-                    .padding(.top, 24)
-                    .padding(.bottom, 32)
+                    .frame(minHeight: 560)
+                    .animation(.easeInOut, value: currentStep)
+
+                    // Pager dots (4 dots now)
+                    HStack(spacing: 8) {
+                        ForEach(0..<4) { index in
+                            Circle()
+                                .fill(currentStep == index ? Color.blue : Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                        }
+                    }
+                    .padding(.top, 16)
+                    .padding(.bottom, 20)
                 }
-                .padding(.horizontal, 40)
-                .frame(maxWidth: 540)
+                .padding(.horizontal, 24)
+                .frame(maxWidth: 600)
             }
             .frame(maxWidth: .infinity)
         }
-        .frame(width: 540, height: 680)
+        .frame(width: 600, height: 800)
         .onAppear {
             checkPermissions()
         }
@@ -133,7 +148,7 @@ struct OnboardingView: View {
                             if granted {
                                 // Go next
                                 withAnimation {
-                                    self.currentStep = 1
+                                    self.currentStep = 2
                                 }
                             }
                         }
@@ -144,7 +159,7 @@ struct OnboardingView: View {
                         print("✅ Notification already granted")
                         self.notificationPermissionGranted = true
                         withAnimation {
-                            self.currentStep = 1
+                            self.currentStep = 2
                         }
                     }
                 } else if settings.authorizationStatus == .denied {
@@ -183,7 +198,7 @@ struct OnboardingView: View {
                     if granted {
                         // Granted: go next
                         withAnimation {
-                            currentStep = 2
+                            currentStep = 3
                         }
                         timer.invalidate()
                     }
@@ -191,7 +206,7 @@ struct OnboardingView: View {
             }
 
             // Stop if step changed
-            if currentStep != 1 {
+            if currentStep != 2 {
                 timer.invalidate()
             }
         }
@@ -243,7 +258,123 @@ struct OnboardingView: View {
     }
 }
 
-// Notification permission step view
+// MARK: - Welcome Step View (NEW)
+
+struct WelcomeStepView: View {
+    let onContinue: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            // App Icon
+            Image(systemName: "doc.on.clipboard.fill")
+                .font(.system(size: 80))
+                .foregroundStyle(.blue)
+                .padding(.top, 24)
+
+            // Title & Slogan
+            VStack(spacing: 8) {
+                Text(AppText.Onboarding.welcomeTitle)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Text(AppText.Onboarding.welcomeSlogan)
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.bottom, 8)
+
+            // Feature Cards
+            VStack(spacing: 12) {
+                FeatureCard(
+                    icon: "tray.full.fill",
+                    iconColor: .blue,
+                    title: AppText.Onboarding.feature1Title,
+                    description: AppText.Onboarding.feature1Desc
+                )
+
+                FeatureCard(
+                    icon: "bolt.fill",
+                    iconColor: .orange,
+                    title: AppText.Onboarding.feature2Title,
+                    description: AppText.Onboarding.feature2Desc
+                )
+
+                FeatureCard(
+                    icon: "magnifyingglass.circle.fill",
+                    iconColor: .green,
+                    title: AppText.Onboarding.feature3Title,
+                    description: AppText.Onboarding.feature3Desc
+                )
+            }
+            .padding(.horizontal, 16)
+
+            Spacer()
+                .frame(height: 20)
+
+            // CTA Button
+            Button(action: onContinue) {
+                HStack(spacing: 8) {
+                    Text(AppText.Onboarding.startSetup)
+                    Image(systemName: "arrow.right")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.accentColor)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 16)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Feature Card (NEW)
+
+struct FeatureCard: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let description: String
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.title)
+                .foregroundStyle(iconColor)
+                .frame(width: 44)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.semibold)
+
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .background {
+            if #available(macOS 14, *) {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.regularMaterial)
+            } else {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(NSColor.controlBackgroundColor))
+            }
+        }
+    }
+}
+
+// MARK: - Notification Permission Step (ENHANCED)
+
 struct NotificationPermissionStepView: View {
     @Binding var isGranted: Bool
     let primaryAction: () -> Void
@@ -251,7 +382,7 @@ struct NotificationPermissionStepView: View {
     @State private var isDenied = false
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Icon
             ZStack {
                 Circle()
@@ -262,49 +393,51 @@ struct NotificationPermissionStepView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.blue)
             }
-            .padding(.top, 16)
+            .padding(.top, 12)
 
             // Title
             VStack(spacing: 6) {
-                Text(L10n.text("开启通知", "Enable notifications"))
+                Text(AppText.Onboarding.enableNotifications)
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text(L10n.text("接收剪贴板复制和粘贴提醒", "Get alerts for copy and paste"))
-                    .font(.body)
+                Text(AppText.Onboarding.notificationDesc)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 20)
             }
 
-            // Description
-            VStack(alignment: .leading, spacing: 8) {
+            // Benefits (ENHANCED - 4 benefits)
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle.fill")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.blue)
-                    Text(L10n.text("通知将告诉您：", "Notifications will tell you:"))
-                        .font(.caption)
+                    Text(AppText.Onboarding.notificationBenefitsTitle)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
                 }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("✓")
-                            .foregroundStyle(.green)
-                        Text(L10n.text("成功复制内容时的确认提示", "Confirmation when copy succeeds"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("✓")
-                            .foregroundStyle(.green)
-                        Text(L10n.text("自动粘贴完成后的提醒", "Reminder after auto-paste completes"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    NotificationBenefitRow(text: AppText.Onboarding.benefit1)
+                    NotificationBenefitRow(text: AppText.Onboarding.benefit2)
+                    NotificationBenefitRow(text: AppText.Onboarding.benefit3)
+                    NotificationBenefitRow(text: AppText.Onboarding.benefit4)
                 }
+
+                // Non-intrusive assurance (NEW)
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.green)
+                    Text(AppText.Onboarding.nonIntrusive)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 4)
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -321,44 +454,42 @@ struct NotificationPermissionStepView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.blue.opacity(0.2), lineWidth: 1)
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Status
             if isGranted {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text(L10n.text("已授权", "Granted"))
+                    Text(AppText.PermissionStatus.granted)
                         .foregroundStyle(.green)
                         .fontWeight(.medium)
                 }
                 .padding(.top, 4)
             } else if isDenied {
-                // Denied hint
                 VStack(spacing: 6) {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundStyle(.orange)
-                        Text(L10n.text("权限已被拒绝", "Permission denied"))
+                        Text(AppText.Onboarding.permissionDenied)
                             .foregroundStyle(.orange)
                             .fontWeight(.medium)
                     }
-                    Text(L10n.text("请在系统设置中手动开启", "Please enable it in System Settings"))
-                        .font(.caption)
+                    Text(AppText.Onboarding.enableInSettings)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 4)
             }
 
             Spacer()
-                .frame(height: 30)
+                .frame(height: 16)
 
             // Buttons
             VStack(spacing: 12) {
                 if !isGranted {
                     Button(action: {
                         if isDenied {
-                            // Denied: open settings
                             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
                                 NSWorkspace.shared.open(url)
                             }
@@ -366,7 +497,7 @@ struct NotificationPermissionStepView: View {
                             primaryAction()
                         }
                     }) {
-                        Text(isDenied ? L10n.text("打开系统设置", "Open System Settings") : L10n.text("授予权限", "Grant permission"))
+                        Text(isDenied ? L10n.text("打开系统设置", "Open System Settings") : AppText.Onboarding.grantPermission)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Color.accentColor)
@@ -377,7 +508,7 @@ struct NotificationPermissionStepView: View {
                 }
 
                 Button(action: secondaryAction) {
-                    Text(isGranted ? L10n.text("下一步", "Next") : L10n.text("稍后设置", "Maybe later"))
+                    Text(isGranted ? AppText.Onboarding.nextStep : AppText.Onboarding.maybeLater)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(isGranted ? Color.accentColor : Color.clear)
@@ -386,12 +517,11 @@ struct NotificationPermissionStepView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
         .onAppear {
-            // Status check
             UNUserNotificationCenter.current().getNotificationSettings { settings in
                 DispatchQueue.main.async {
                     isDenied = settings.authorizationStatus == .denied
@@ -402,99 +532,33 @@ struct NotificationPermissionStepView: View {
     }
 }
 
-// Generic permission step view
-struct PermissionStepView: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let description: String
-    @Binding var isGranted: Bool
-    let primaryButtonTitle: String
-    let primaryAction: () -> Void
-    let secondaryButtonTitle: String
-    let secondaryAction: () -> Void
+// MARK: - Notification Benefit Row (NEW)
+
+struct NotificationBenefitRow: View {
+    let text: String
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.1))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: icon)
-                    .font(.system(size: 48))
-                    .foregroundStyle(iconColor)
-            }
-            .padding(.top, 16)
-
-            // Text
-            VStack(spacing: 8) {
-                Text(title)
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                Text(description)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-            }
-
-            // Status
-            if isGranted {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Text(L10n.text("已授权", "Granted"))
-                        .foregroundStyle(.green)
-                        .fontWeight(.medium)
-                }
-                .padding(.top, 8)
-            }
-
-            Spacer()
-                .frame(height: 30)
-
-            // Buttons
-            VStack(spacing: 12) {
-                if !isGranted {
-                    Button(action: primaryAction) {
-                        Text(primaryButtonTitle)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                Button(action: secondaryAction) {
-                    Text(isGranted ? L10n.text("下一步", "Next") : secondaryButtonTitle)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(isGranted ? Color.accentColor : Color.clear)
-                        .foregroundColor(isGranted ? .white : .primary)
-                        .cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 16)
+        HStack(alignment: .top, spacing: 6) {
+            Text("✓")
+                .font(.subheadline)
+                .foregroundStyle(.green)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity)
     }
 }
 
-// Accessibility permission step
+// MARK: - Accessibility Permission Step (ENHANCED)
+
 struct AccessibilityPermissionStepView: View {
     @Binding var isGranted: Bool
     let primaryAction: () -> Void
     let secondaryAction: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 16) {
             // Icon
             ZStack {
                 Circle()
@@ -505,34 +569,91 @@ struct AccessibilityPermissionStepView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.green)
             }
-            .padding(.top, 16)
+            .padding(.top, 12)
 
             // Title
             VStack(spacing: 6) {
-                Text(L10n.text("开启辅助功能", "Enable accessibility"))
+                Text(AppText.Onboarding.enableAccessibility)
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text(L10n.text("允许 PasteMine 实现自动粘贴功能", "Allow PasteMine to perform auto-paste"))
-                    .font(.body)
+                Text(AppText.Onboarding.unlockCoreFeatures)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 20)
             }
 
-            // Steps
+            // Comparison Cards (NEW)
+            HStack(spacing: 12) {
+                // Without Permission
+                VStack(spacing: 8) {
+                    Image(systemName: "xmark.circle")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+
+                    Text(AppText.Onboarding.withoutPermission)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+
+                    Text(AppText.Onboarding.withoutDesc)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(12)
+                .background {
+                    if #available(macOS 14, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.regularMaterial)
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(NSColor.controlBackgroundColor))
+                    }
+                }
+
+                // With Permission
+                VStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.green)
+
+                    Text(AppText.Onboarding.withPermission)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+
+                    Text(AppText.Onboarding.withDesc)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(12)
+                .background {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.green.opacity(0.1))
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.green.opacity(0.3), lineWidth: 1.5)
+                )
+            }
+            .padding(.horizontal, 20)
+
+            // Simplified Steps (3 instead of 5)
             VStack(alignment: .leading, spacing: 10) {
-                Text(L10n.text("操作步骤：", "Steps:"))
-                    .font(.subheadline)
+                Text(AppText.Onboarding.setupSteps)
+                    .font(.callout)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
-                
+
                 VStack(alignment: .leading, spacing: 8) {
-                    StepRow(number: "1", text: L10n.text("点击下方按钮打开「系统设置」", "Click the button below to open System Settings"))
-                    StepRow(number: "2", text: L10n.text("进入「隐私与安全性」", "Go to Privacy & Security"))
-                    StepRow(number: "3", text: L10n.text("点击「辅助功能」", "Click Accessibility"))
-                    StepRow(number: "4", text: L10n.text("点击「+」添加 PasteMine", "Click \"+\" to add PasteMine"))
-                    StepRow(number: "5", text: L10n.text("可能需要输入密码确认", "You may need to enter your password"))
+                    SimpleStepRow(number: "1", text: AppText.Onboarding.step1Simple)
+                    SimpleStepRow(number: "2", text: AppText.Onboarding.step2Simple)
+                    SimpleStepRow(number: "3", text: AppText.Onboarding.step3Simple)
                 }
             }
             .padding(14)
@@ -546,14 +667,26 @@ struct AccessibilityPermissionStepView: View {
                         .fill(Color(NSColor.controlBackgroundColor))
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
+
+            // Security Promise (NEW)
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.green)
+                Text(AppText.Onboarding.securityPromise)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 28)
 
             // Status
             if isGranted {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text(L10n.text("已授权", "Granted"))
+                    Text(AppText.PermissionStatus.granted)
                         .foregroundStyle(.green)
                         .fontWeight(.medium)
                 }
@@ -561,7 +694,7 @@ struct AccessibilityPermissionStepView: View {
             }
 
             Spacer()
-                .frame(height: 20)
+                .frame(height: 12)
 
             // Buttons
             VStack(spacing: 12) {
@@ -578,7 +711,7 @@ struct AccessibilityPermissionStepView: View {
                 }
 
                 Button(action: secondaryAction) {
-                    Text(isGranted ? L10n.text("下一步", "Next") : L10n.text("稍后设置", "Maybe later"))
+                    Text(isGranted ? AppText.Onboarding.nextStep : AppText.Onboarding.maybeLater)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(isGranted ? Color.accentColor : Color.clear)
@@ -587,45 +720,47 @@ struct AccessibilityPermissionStepView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
     }
 }
 
-// Step row
-struct StepRow: View {
+// MARK: - Simple Step Row (NEW - replaces complex 5-step StepRow)
+
+struct SimpleStepRow: View {
     let number: String
     let text: String
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text(number)
-                .font(.caption)
+                .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
-                .frame(width: 18, height: 18)
+                .frame(width: 20, height: 20)
                 .background(Circle().fill(Color.accentColor))
-            
+
             Text(text)
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            
+
             Spacer()
         }
     }
 }
 
-// Completion view
+// MARK: - Completion Step (ENHANCED)
+
 struct CompletionStepView: View {
     let notificationGranted: Bool
     let accessibilityGranted: Bool
     let onComplete: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Success icon
             ZStack {
                 Circle()
@@ -636,16 +771,16 @@ struct CompletionStepView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.green)
             }
-            .padding(.top, 16)
+            .padding(.top, 12)
 
             // Title
             VStack(spacing: 6) {
-                Text(L10n.text("设置完成！", "Setup complete!"))
+                Text(AppText.Onboarding.setupComplete)
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text(L10n.text("您已准备好使用 PasteMine", "You're ready to use PasteMine"))
-                    .font(.body)
+                Text(AppText.Onboarding.nowReady)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
@@ -653,13 +788,13 @@ struct CompletionStepView: View {
             VStack(spacing: 10) {
                 PermissionStatusRow(
                     icon: "bell.fill",
-                    title: L10n.text("通知权限", "Notification"),
+                    title: AppText.Onboarding.notificationLabel,
                     isGranted: notificationGranted
                 )
 
                 PermissionStatusRow(
                     icon: "hand.point.up.left.fill",
-                    title: L10n.text("辅助功能权限", "Accessibility"),
+                    title: AppText.Onboarding.accessibilityLabel,
                     isGranted: accessibilityGranted
                 )
             }
@@ -673,40 +808,38 @@ struct CompletionStepView: View {
                         .fill(Color(NSColor.controlBackgroundColor))
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 8)
+            .padding(.horizontal, 20)
 
-            // Tips
-            VStack(alignment: .leading, spacing: 8) {
+            // Shortcut Keys Card (NEW)
+            VStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.caption)
+                    Image(systemName: "keyboard.fill")
+                        .font(.subheadline)
                         .foregroundStyle(.blue)
-                    Text(L10n.text("使用提示", "Tips"))
-                        .font(.caption)
+                    Text(AppText.Onboarding.shortcutLabel)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
                 }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("•")
-                            .foregroundStyle(.secondary)
-                        Text(L10n.text("按 ⌘⇧V 或点击菜单栏图标打开历史窗口", "Press ⌘⇧V or click the menu bar icon to open history"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack(alignment: .top, spacing: 6) {
-                        Text("•")
-                            .foregroundStyle(.secondary)
-                        Text(L10n.text("点击历史记录即可自动粘贴到当前应用", "Click a history item to auto-paste into the front app"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+
+                HStack(spacing: 4) {
+                    KeyCapView(symbol: "⌘")
+                    Text("+")
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+                    KeyCapView(symbol: "⇧")
+                    Text("+")
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+                    KeyCapView(symbol: "V")
                 }
+
+                Text(AppText.Onboarding.shortcutDesc)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .background {
                 if #available(macOS 14, *) {
                     RoundedRectangle(cornerRadius: 8)
@@ -720,36 +853,131 @@ struct CompletionStepView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.blue.opacity(0.2), lineWidth: 1)
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
+            // Quick Start Guide (NEW)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.orange)
+                    Text(AppText.Onboarding.quickStartLabel)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    QuickTipRow(text: AppText.Onboarding.quickTip1)
+                    QuickTipRow(text: AppText.Onboarding.quickTip2)
+                    QuickTipRow(text: AppText.Onboarding.quickTip3)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                if #available(macOS 14, *) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.orange.opacity(0.05))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.orange.opacity(0.1))
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+            )
+            .padding(.horizontal, 20)
+
+            // Missing permissions hint
             if !notificationGranted || !accessibilityGranted {
-                Text(L10n.text("您可以稍后在系统设置中开启缺失的权限", "You can enable missing permissions later in System Settings"))
-                    .font(.caption)
+                Text(AppText.Onboarding.missingPermissions)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
                     .padding(.top, 4)
             }
 
             Spacer()
-                .frame(height: 20)
+                .frame(height: 12)
 
-            // Finish button
-            Button(action: onComplete) {
-                Text(L10n.text("开始使用", "Start using"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+            // Dual CTAs (NEW)
+            VStack(spacing: 12) {
+                Button(action: onComplete) {
+                    Text(AppText.Onboarding.tryNow)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onComplete) {
+                    Text(AppText.Onboarding.startLater)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundColor(.primary)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
     }
 }
 
-// Permission status row
+// MARK: - Key Cap View (NEW)
+
+struct KeyCapView: View {
+    let symbol: String
+
+    var body: some View {
+        Text(symbol)
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(.primary)
+            .frame(width: 28, height: 28)
+            .background {
+                if #available(macOS 14, *) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(.regularMaterial)
+                } else {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.primary.opacity(0.2), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+    }
+}
+
+// MARK: - Quick Tip Row (NEW)
+
+struct QuickTipRow: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text("•")
+                .font(.subheadline)
+                .foregroundStyle(.orange)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+// MARK: - Permission Status Row (Existing)
+
 struct PermissionStatusRow: View {
     let icon: String
     let title: String
@@ -770,7 +998,7 @@ struct PermissionStatusRow: View {
             Image(systemName: isGranted ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                 .foregroundStyle(isGranted ? .green : .orange)
 
-            Text(isGranted ? "已授权" : "未授权")
+            Text(isGranted ? AppText.PermissionStatus.granted : AppText.PermissionStatus.notGranted)
                 .font(.caption)
                 .foregroundStyle(isGranted ? .green : .orange)
         }

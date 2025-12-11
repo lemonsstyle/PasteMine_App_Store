@@ -54,18 +54,41 @@ struct SettingsView: View {
     @State private var settings = AppSettings.load()
     @State private var selectedGroup: SettingsGroup = .general
     @State private var selectedPrivacySubGroup: PrivacySubGroup = .apps
+    @State private var isShowingProSheet = false
+    @EnvironmentObject private var proManager: ProEntitlementManager
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // 标题区域
-            Text(AppText.Settings.title)
-                .font(.title3)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
+            HStack(spacing: 0) {
+                Text(AppText.Settings.title)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                
+                Spacer()
+                
+                // Pro 入口按钮
+                Button(action: {
+                    isShowingProSheet = true
+                }) {
+                    Text(AppText.Pro.proButton)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.accentColor)
+                        )
+                }
+                .buttonStyle(.plain)
+                .help(AppText.Pro.upgradeTooltip)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
 
             Divider()
                 .padding(.horizontal, 16)
@@ -131,7 +154,7 @@ struct SettingsView: View {
             }
             .padding(16)
         }
-        .frame(width: 420, height: 521)
+        .frame(width: 420, height: 530)
         .background {
             if #available(macOS 14, *) {
                 Color.clear
@@ -140,27 +163,35 @@ struct SettingsView: View {
                 Color(NSColor.windowBackgroundColor)
             }
         }
+        .sheet(isPresented: $isShowingProSheet) {
+            ProSheetView()
+                .environmentObject(proManager)
+        }
+        .onAppear {
+            // 设置页出现时重新计算状态
+            proManager.recalcState()
+        }
     }
 
     // 通用设置
     @ViewBuilder
     private var generalSettings: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 3) {
             SettingsSectionView(title: "") {
                 HStack(spacing: 12) {
                     Text(AppText.Settings.General.notification)
                         .font(.body)
                         .foregroundStyle(.primary)
-                    
+
                     Spacer()
-                    
+
                     Toggle("", isOn: $settings.notificationEnabled)
                         .toggleStyle(.switch)
                         .onChange(of: settings.notificationEnabled) { _ in
                             settings.save()
                         }
                 }
-                
+
                 Text(AppText.Settings.General.notificationDesc)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -172,9 +203,9 @@ struct SettingsView: View {
                     Text(AppText.Settings.General.sound)
                         .font(.body)
                         .foregroundStyle(.primary)
-                    
+
                     Spacer()
-                    
+
                     Toggle("", isOn: $settings.soundEnabled)
                         .toggleStyle(.switch)
                         .onChange(of: settings.soundEnabled) { _ in
@@ -184,7 +215,7 @@ struct SettingsView: View {
                             }
                         }
                 }
-                
+
                 Text(AppText.Settings.General.soundDesc)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -198,27 +229,27 @@ struct SettingsView: View {
                     Text(AppText.Settings.General.globalShortcut)
                         .font(.subheadline)
                         .foregroundStyle(.primary)
-                    
+
                     ShortcutRecorderView(shortcut: $settings.globalShortcut)
                         .onChange(of: settings.globalShortcut) { _ in
                             settings.save()
                         }
-                    
+
                     Text(AppText.Settings.General.globalShortcutDesc)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 Divider()
                     .padding(.vertical, 1)
-                
+
                 HStack(spacing: 12) {
                     Text(AppText.Settings.General.launchAtLogin)
                         .font(.subheadline)
                         .foregroundStyle(.primary)
-                    
+
                     Spacer()
-                    
+
                     Toggle("", isOn: $settings.launchAtLogin)
                         .toggleStyle(.switch)
                         .onChange(of: settings.launchAtLogin) { newValue in
@@ -226,7 +257,7 @@ struct SettingsView: View {
                             LaunchAtLoginService.shared.setLaunchAtLogin(enabled: newValue)
                         }
                 }
-                
+
                 Text(AppText.Settings.General.launchAtLoginDesc)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -240,18 +271,37 @@ struct SettingsView: View {
     private var storageSettings: some View {
         SettingsSectionView(title: "") {
             VStack(alignment: .leading, spacing: 3) {
-                Text(AppText.Settings.Storage.historyLimit)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                
-                Picker("", selection: $settings.maxHistoryCount) {
-                    ForEach(AppSettings.historyCountOptions, id: \.self) { count in
-                        Text(count == 999 ? AppText.Settings.Storage.historyPermanent : AppText.Settings.Storage.historyCount(count)).tag(count)
-                    }
+                HStack {
+                    Text(AppText.Settings.Storage.historyLimit)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
                 }
-                .pickerStyle(.segmented)
-                .onChange(of: settings.maxHistoryCount) { _ in
-                    settings.save()
+
+                if proManager.isProFeatureEnabled {
+                    Picker("", selection: $settings.proMaxHistoryCount) {
+                        ForEach(AppSettings.proHistoryCountOptions, id: \.self) { count in
+                            Text(count == 999 ? AppText.Settings.Storage.historyPermanent : AppText.Settings.Storage.historyCount(count)).tag(count)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: settings.proMaxHistoryCount) { _ in
+                        settings.save()
+                    }
+                } else {
+                    // 免费版显示升级提示（左对齐，蓝色文字，可点击）
+                    Button(action: {
+                        isShowingProSheet = true
+                    }) {
+                        Text(AppText.Pro.upgradeForMoreHistory)
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 1)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 Text(AppText.Settings.Storage.historyLimitDesc)
@@ -283,23 +333,42 @@ struct SettingsView: View {
 
         SettingsSectionView(title: "") {
             HStack(spacing: 12) {
-                Text(AppText.Settings.Storage.imagePreview)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                
+                HStack(spacing: 6) {
+                    Text(AppText.Settings.Storage.imagePreview)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                }
+
                 Spacer()
-                
-                Toggle("", isOn: $settings.imagePreviewEnabled)
-                    .toggleStyle(.switch)
-                    .onChange(of: settings.imagePreviewEnabled) { _ in
-                        settings.save()
-                    }
+
+                if proManager.isProFeatureEnabled {
+                    Toggle("", isOn: $settings.imagePreviewEnabled)
+                        .toggleStyle(.switch)
+                        .onChange(of: settings.imagePreviewEnabled) { _ in
+                            settings.save()
+                        }
+                }
             }
-            
-            Text(AppText.Settings.Storage.imagePreviewDesc)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .padding(.top, 1)
+
+            if proManager.isProFeatureEnabled {
+                Text(AppText.Settings.Storage.imagePreviewDesc)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 1)
+            } else {
+                // 免费版显示升级提示（可点击）
+                Button(action: {
+                    isShowingProSheet = true
+                }) {
+                    Text(AppText.Pro.upgradeForImagePreview)
+                        .font(.caption2)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 1)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 

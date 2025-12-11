@@ -64,7 +64,7 @@ struct AppPickerView: View {
                 }
                 .padding(4)
             }
-            .frame(maxHeight: 96)
+            .frame(maxHeight: 120)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
@@ -99,8 +99,8 @@ struct AppPickerView: View {
         AppDelegate.shared?.windowManager?.pauseAutoHide()
         
         let panel = NSOpenPanel()
-        panel.title = "选择要忽略的应用"
-        panel.message = "请选择一个应用程序"
+        panel.title = AppText.AppPicker.selectAppTitle
+        panel.message = AppText.AppPicker.selectAppMessage
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.canChooseFiles = true

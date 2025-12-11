@@ -89,13 +89,21 @@ class ClipboardMonitor {
             return
         }
 
+        let hasText = (pasteboard.string(forType: .string) ?? "").isEmpty == false
+        let hasRasterImage = hasRasterImageData()
+        let hasPDF = pasteboard.data(forType: .pdf) != nil
+
         // 优先处理文件 URL 的图片（Finder 复制文件常见）
-        if handleImage() {
-            return
+        // 当存在位图类图片（png/jpeg/tiff等）时优先处理为图片
+        // 对于仅提供 PDF 且无纯文本的情况，视为图片；若同时有文本，则优先文本
+        if hasRasterImage {
+            if handleImage(allowPDF: false) { return }
+        } else if hasPDF && !hasText {
+            if handleImage(allowPDF: true) { return }
         }
-        
+
         // 其次检查文本
-        if let content = pasteboard.string(forType: .string), !content.isEmpty {
+        if hasText, let content = pasteboard.string(forType: .string), !content.isEmpty {
             handleText(content)
             return
         }
@@ -144,8 +152,8 @@ class ClipboardMonitor {
     
     /// 处理图片内容
     @discardableResult
-    private func handleImage() -> Bool {
-        guard let imagePayload = getImageDataFromPasteboard() else { return false }
+    private func handleImage(allowPDF: Bool = true) -> Bool {
+        guard let imagePayload = getImageDataFromPasteboard(allowPDF: allowPDF) else { return false }
 
         let imageData = imagePayload.data
         let type = imagePayload.type
@@ -255,7 +263,7 @@ class ClipboardMonitor {
 
     /// 更新 lastHash（用于粘贴操作时跳过通知但更新状态）
     private func updateLastHash() {
-        if let imagePayload = getImageDataFromPasteboard() {
+        if let imagePayload = getImageDataFromPasteboard(allowPDF: true) {
             lastHash = HashUtility.sha256Data(imagePayload.data)
                 latestContent = nil
             print("🖼️  已更新图片 hash（格式：\(formatText(for: imagePayload.type))）")
@@ -305,15 +313,37 @@ class ClipboardMonitor {
         ]
     }
 
+    /// 是否存在位图类图片数据（不含 PDF）
+    private func hasRasterImageData() -> Bool {
+        let rasterTypes: [NSPasteboard.PasteboardType] = [
+            .png,
+            .tiff,
+            NSPasteboard.PasteboardType("public.jpeg"),
+            NSPasteboard.PasteboardType("public.jpeg-2000"),
+            NSPasteboard.PasteboardType("public.heic"),
+            NSPasteboard.PasteboardType("public.heif"),
+            NSPasteboard.PasteboardType("com.compuserve.gif"),
+            NSPasteboard.PasteboardType("public.webp"),
+            NSPasteboard.PasteboardType("com.microsoft.bmp")
+        ]
+        for type in rasterTypes {
+            if pasteboard.data(forType: type) != nil {
+                return true
+            }
+        }
+        return false
+    }
+
     /// 尝试从剪贴板提取图片数据（优先处理 Finder 文件 URL）
-    private func getImageDataFromPasteboard() -> (data: Data, type: NSPasteboard.PasteboardType)? {
+    private func getImageDataFromPasteboard(allowPDF: Bool) -> (data: Data, type: NSPasteboard.PasteboardType)? {
         // 1) Finder 复制的文件 URL
-        if let fileResult = getImageDataFromFileURL() {
+        if let fileResult = getImageDataFromFileURL(allowPDF: allowPDF) {
             return fileResult
         }
 
         // 2) 直接提供的图片二进制
         for type in supportedImageTypes {
+            if !allowPDF, type == .pdf { continue }
             if let imageData = pasteboard.data(forType: type) {
                 return (imageData, type)
             }
@@ -323,7 +353,7 @@ class ClipboardMonitor {
     }
 
     /// 从文件 URL（Finder）中获取图片
-    private func getImageDataFromFileURL() -> (data: Data, type: NSPasteboard.PasteboardType)? {
+    private func getImageDataFromFileURL(allowPDF: Bool) -> (data: Data, type: NSPasteboard.PasteboardType)? {
         guard let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] else {
             return nil
         }
@@ -346,6 +376,7 @@ class ClipboardMonitor {
             guard let contentType, contentType.conforms(to: .image) else {
                 continue
             }
+            if !allowPDF, contentType == .pdf { continue }
 
             guard let data = try? Data(contentsOf: url) else {
                 print("⚠️  读取文件失败: \(url.path)")
