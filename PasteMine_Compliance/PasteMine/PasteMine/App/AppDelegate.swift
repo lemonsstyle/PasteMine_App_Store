@@ -201,13 +201,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         let hostingController = NSHostingController(rootView: onboardingView)
 
         onboardingWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 540, height: 680),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 800),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
 
-        onboardingWindow?.setContentSize(NSSize(width: 540, height: 680))
+        onboardingWindow?.setContentSize(NSSize(width: 600, height: 800))
 
         onboardingWindow?.center()
         onboardingWindow?.contentViewController = hostingController

@@ -31,7 +31,7 @@ struct OnboardingView: View {
                             Image(systemName: "hand.wave.fill")
                                 .font(.system(size: 48))
                                 .foregroundStyle(.blue)
-                                .padding(.top, 32)
+                                .padding(.top, 20)
 
                             Text(AppText.Onboarding.title)
                                 .font(.title)
@@ -41,7 +41,7 @@ struct OnboardingView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.bottom, 32)
+                        .padding(.bottom, 20)
                     }
 
                     // Steps
@@ -92,7 +92,7 @@ struct OnboardingView: View {
                             )
                         }
                     }
-                    .frame(minHeight: 480)
+                    .frame(minHeight: 560)
                     .animation(.easeInOut, value: currentStep)
 
                     // Pager dots (4 dots now)
@@ -103,15 +103,15 @@ struct OnboardingView: View {
                                 .frame(width: 8, height: 8)
                         }
                     }
-                    .padding(.top, 24)
-                    .padding(.bottom, 32)
+                    .padding(.top, 16)
+                    .padding(.bottom, 20)
                 }
-                .padding(.horizontal, 40)
-                .frame(maxWidth: 540)
+                .padding(.horizontal, 24)
+                .frame(maxWidth: 600)
             }
             .frame(maxWidth: .infinity)
         }
-        .frame(width: 540, height: 680)
+        .frame(width: 600, height: 800)
         .onAppear {
             checkPermissions()
         }
@@ -264,12 +264,12 @@ struct WelcomeStepView: View {
     let onContinue: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             // App Icon
             Image(systemName: "doc.on.clipboard.fill")
                 .font(.system(size: 80))
                 .foregroundStyle(.blue)
-                .padding(.top, 32)
+                .padding(.top, 24)
 
             // Title & Slogan
             VStack(spacing: 8) {
@@ -307,10 +307,10 @@ struct WelcomeStepView: View {
                     description: AppText.Onboarding.feature3Desc
                 )
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 16)
 
             Spacer()
-                .frame(height: 24)
+                .frame(height: 20)
 
             // CTA Button
             Button(action: onContinue) {
@@ -325,7 +325,7 @@ struct WelcomeStepView: View {
                 .cornerRadius(8)
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
@@ -349,11 +349,11 @@ struct FeatureCard: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.subheadline)
+                    .font(.body)
                     .fontWeight(.semibold)
 
                 Text(description)
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -382,7 +382,7 @@ struct NotificationPermissionStepView: View {
     @State private var isDenied = false
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 16) {
             // Icon
             ZStack {
                 Circle()
@@ -393,7 +393,7 @@ struct NotificationPermissionStepView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.blue)
             }
-            .padding(.top, 16)
+            .padding(.top, 12)
 
             // Title
             VStack(spacing: 6) {
@@ -402,20 +402,20 @@ struct NotificationPermissionStepView: View {
                     .fontWeight(.semibold)
 
                 Text(AppText.Onboarding.notificationDesc)
-                    .font(.body)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 20)
             }
 
             // Benefits (ENHANCED - 4 benefits)
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle.fill")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.blue)
                     Text(AppText.Onboarding.notificationBenefitsTitle)
-                        .font(.caption)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
                 }
@@ -430,10 +430,10 @@ struct NotificationPermissionStepView: View {
                 // Non-intrusive assurance (NEW)
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.caption2)
+                        .font(.subheadline)
                         .foregroundStyle(.green)
                     Text(AppText.Onboarding.nonIntrusive)
-                        .font(.caption2)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -454,7 +454,7 @@ struct NotificationPermissionStepView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.blue.opacity(0.2), lineWidth: 1)
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Status
             if isGranted {
@@ -476,14 +476,14 @@ struct NotificationPermissionStepView: View {
                             .fontWeight(.medium)
                     }
                     Text(AppText.Onboarding.enableInSettings)
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 4)
             }
 
             Spacer()
-                .frame(height: 20)
+                .frame(height: 16)
 
             // Buttons
             VStack(spacing: 12) {
@@ -517,7 +517,7 @@ struct NotificationPermissionStepView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
@@ -540,10 +540,10 @@ struct NotificationBenefitRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 6) {
             Text("✓")
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.green)
             Text(text)
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -558,7 +558,7 @@ struct AccessibilityPermissionStepView: View {
     let secondaryAction: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 16) {
             // Icon
             ZStack {
                 Circle()
@@ -569,7 +569,7 @@ struct AccessibilityPermissionStepView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.green)
             }
-            .padding(.top, 16)
+            .padding(.top, 12)
 
             // Title
             VStack(spacing: 6) {
@@ -578,10 +578,10 @@ struct AccessibilityPermissionStepView: View {
                     .fontWeight(.semibold)
 
                 Text(AppText.Onboarding.unlockCoreFeatures)
-                    .font(.body)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 20)
             }
 
             // Comparison Cards (NEW)
@@ -593,12 +593,12 @@ struct AccessibilityPermissionStepView: View {
                         .foregroundStyle(.orange)
 
                     Text(AppText.Onboarding.withoutPermission)
-                        .font(.caption)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
 
                     Text(AppText.Onboarding.withoutDesc)
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -621,12 +621,12 @@ struct AccessibilityPermissionStepView: View {
                         .foregroundStyle(.green)
 
                     Text(AppText.Onboarding.withPermission)
-                        .font(.caption)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
 
                     Text(AppText.Onboarding.withDesc)
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -641,12 +641,12 @@ struct AccessibilityPermissionStepView: View {
                         .stroke(Color.green.opacity(0.3), lineWidth: 1.5)
                 )
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Simplified Steps (3 instead of 5)
             VStack(alignment: .leading, spacing: 10) {
                 Text(AppText.Onboarding.setupSteps)
-                    .font(.subheadline)
+                    .font(.callout)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
 
@@ -667,19 +667,19 @@ struct AccessibilityPermissionStepView: View {
                         .fill(Color(NSColor.controlBackgroundColor))
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Security Promise (NEW)
             HStack(alignment: .top, spacing: 6) {
                 Image(systemName: "lock.shield.fill")
-                    .font(.caption2)
+                    .font(.subheadline)
                     .foregroundStyle(.green)
                 Text(AppText.Onboarding.securityPromise)
-                    .font(.caption2)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, 28)
 
             // Status
             if isGranted {
@@ -694,7 +694,7 @@ struct AccessibilityPermissionStepView: View {
             }
 
             Spacer()
-                .frame(height: 16)
+                .frame(height: 12)
 
             // Buttons
             VStack(spacing: 12) {
@@ -720,7 +720,7 @@ struct AccessibilityPermissionStepView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
@@ -736,14 +736,14 @@ struct SimpleStepRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text(number)
-                .font(.caption)
+                .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
-                .frame(width: 18, height: 18)
+                .frame(width: 20, height: 20)
                 .background(Circle().fill(Color.accentColor))
 
             Text(text)
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -760,7 +760,7 @@ struct CompletionStepView: View {
     let onComplete: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 16) {
             // Success icon
             ZStack {
                 Circle()
@@ -771,7 +771,7 @@ struct CompletionStepView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.green)
             }
-            .padding(.top, 16)
+            .padding(.top, 12)
 
             // Title
             VStack(spacing: 6) {
@@ -780,7 +780,7 @@ struct CompletionStepView: View {
                     .fontWeight(.semibold)
 
                 Text(AppText.Onboarding.nowReady)
-                    .font(.body)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
@@ -808,16 +808,16 @@ struct CompletionStepView: View {
                         .fill(Color(NSColor.controlBackgroundColor))
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Shortcut Keys Card (NEW)
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "keyboard.fill")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.blue)
                     Text(AppText.Onboarding.shortcutLabel)
-                        .font(.caption)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
                 }
@@ -826,16 +826,16 @@ struct CompletionStepView: View {
                     KeyCapView(symbol: "⌘")
                     Text("+")
                         .foregroundStyle(.secondary)
-                        .font(.caption)
+                        .font(.subheadline)
                     KeyCapView(symbol: "⇧")
                     Text("+")
                         .foregroundStyle(.secondary)
-                        .font(.caption)
+                        .font(.subheadline)
                     KeyCapView(symbol: "V")
                 }
 
                 Text(AppText.Onboarding.shortcutDesc)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(12)
@@ -853,16 +853,16 @@ struct CompletionStepView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.blue.opacity(0.2), lineWidth: 1)
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Quick Start Guide (NEW)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "lightbulb.fill")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.orange)
                     Text(AppText.Onboarding.quickStartLabel)
-                        .font(.caption)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
                 }
@@ -888,20 +888,20 @@ struct CompletionStepView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.orange.opacity(0.2), lineWidth: 1)
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
 
             // Missing permissions hint
             if !notificationGranted || !accessibilityGranted {
                 Text(AppText.Onboarding.missingPermissions)
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 28)
                     .padding(.top, 4)
             }
 
             Spacer()
-                .frame(height: 16)
+                .frame(height: 12)
 
             // Dual CTAs (NEW)
             VStack(spacing: 12) {
@@ -924,7 +924,7 @@ struct CompletionStepView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
             .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity)
@@ -966,10 +966,10 @@ struct QuickTipRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 6) {
             Text("•")
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.orange)
             Text(text)
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
