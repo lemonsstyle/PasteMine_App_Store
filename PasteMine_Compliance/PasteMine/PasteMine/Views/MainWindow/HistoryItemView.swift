@@ -184,7 +184,7 @@ struct HistoryItemView: View {
         }
     }
 
-    // 执行完整的锁动画序列
+    // 执行简单的图标切换动画
     private func performLockAnimation() {
         // 阶段1: 固定图标淡出 (0.15s)
         withAnimation(.easeOut(duration: 0.15)) {
@@ -198,45 +198,15 @@ struct HistoryItemView: View {
             }
         }
 
-        // 阶段3: 旋转晃动 (开始于 0.3s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // 首先设置初始位置（向左 15°）
-            rotationAngle = -15
-
-            // 前4次摆动: -15° ↔ +15° (0.35s 开始)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                withAnimation(
-                    .spring(response: 0.3, dampingFraction: 0.3, blendDuration: 0)
-                        .repeatCount(2, autoreverses: true)  // 2次重复 = 4次摆动
-                ) {
-                    rotationAngle = 15
-                }
-            }
-
-            // 第5次摆动: +15° → -15° (0.65s 开始)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.3, blendDuration: 0)) {
-                    rotationAngle = -15
-                }
-            }
-
-            // 第6次摆动: -15° → 0° (0.8s 开始)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.3, blendDuration: 0)) {
-                    rotationAngle = 0  // 最后停在垂直位置
-                }
-            }
-        }
-
-        // 阶段4: 锁图标淡出 (开始于 1.1s，持续 0.15s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+        // 阶段3: 锁图标淡出 (开始于 0.5s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             withAnimation(.easeOut(duration: 0.15)) {
                 lockIconOpacity = 0.0
             }
         }
 
-        // 阶段5: 固定图标淡入 (开始于 1.25s，持续 0.15s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) {
+        // 阶段4: 固定图标淡入 (开始于 0.65s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
             withAnimation(.easeIn(duration: 0.15)) {
                 iconOpacity = 1.0
             }
