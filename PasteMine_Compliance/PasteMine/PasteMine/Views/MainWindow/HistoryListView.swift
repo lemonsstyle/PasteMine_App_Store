@@ -30,7 +30,7 @@ struct HistoryListView: View {
     @State private var hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
     @State private var imagePreviewEnabled = AppSettings.load().imagePreviewEnabled
     @State private var previewWorkItem: DispatchWorkItem?
-    @State private var showPinLimitTooltip = false  // 显示固定限制气泡提示
+    @State private var isPinLimitTooltipVisible = false  // 显示固定限制气泡提示
     @State private var lockedItemID: UUID?  // 触发锁图标动画的项ID
     @Binding var showSettings: Bool
     @Binding var showProSheet: Bool
@@ -211,14 +211,14 @@ struct HistoryListView: View {
         }
         .overlay(alignment: .top) {
             // 固定限制气泡提示
-            if showPinLimitTooltip {
+            if isPinLimitTooltipVisible {
                 PinLimitTooltipView()
                     .padding(.top, 60)
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(999)
             }
         }
-        .animation(.spring(response: 0.3), value: showPinLimitTooltip)
+        .animation(.spring(response: 0.3), value: isPinLimitTooltipVisible)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification, object: nil)) { _ in
             hasAccessibilityPermission = NSApplication.shared.hasAccessibilityPermission
         }
@@ -445,10 +445,10 @@ struct HistoryListView: View {
 
     // 显示固定限制气泡提示
     private func showPinLimitTooltip() {
-        showPinLimitTooltip = true
+        isPinLimitTooltipVisible = true
         // 2秒后自动隐藏
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            showPinLimitTooltip = false
+            isPinLimitTooltipVisible = false
         }
     }
 
