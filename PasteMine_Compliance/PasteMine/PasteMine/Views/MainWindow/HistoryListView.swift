@@ -326,7 +326,7 @@ struct HistoryListView: View {
 
         // 添加"不再显示"勾选框
         alert.showsSuppressionButton = true
-        alert.suppressionButton?.title = L10n.text("下次不要再弹出此提示", "Don't show this again")
+        alert.suppressionButton?.title = L10n.text("不再显示", "Don't show this again")
 
         if let window = NSApp.keyWindow {
             alert.beginSheetModal(for: window) { [self] response in

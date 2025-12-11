@@ -62,6 +62,7 @@ struct AppSettings: Codable {
 
     // Pro 提示
     var hidePinLimitAlert: Bool = false  // 隐藏固定数量限制提示
+    var hideSourceFilterAlert: Bool = false  // 隐藏来源筛选限制提示
     
     // 存储到 UserDefaults
     static let key = "app_settings"
