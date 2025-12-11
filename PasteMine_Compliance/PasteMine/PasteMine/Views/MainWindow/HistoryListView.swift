@@ -659,7 +659,7 @@ struct PermissionBannerView: View {
     let action: () -> Void
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.yellow)
                 .font(.title3)

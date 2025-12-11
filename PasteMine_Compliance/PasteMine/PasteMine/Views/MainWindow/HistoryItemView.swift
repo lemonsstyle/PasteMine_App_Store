@@ -216,19 +216,25 @@ struct HistoryItemView: View {
             }
         }
 
-        // 阶段4: 锁图标淡出 (开始于 0.9s，持续 0.15s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+        // 阶段4: 回到垂直位置 (开始于 0.85s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
+            withAnimation(.easeOut(duration: 0.15)) {
+                rotationAngle = 0  // 平滑回到垂直位置
+            }
+        }
+
+        // 阶段5: 锁图标淡出 (开始于 1.0s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation(.easeOut(duration: 0.15)) {
                 lockIconOpacity = 0.0
             }
         }
 
-        // 阶段5: 固定图标淡入 + 重置状态 (开始于 1.05s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.05) {
+        // 阶段6: 固定图标淡入 (开始于 1.15s，持续 0.15s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.15) {
             withAnimation(.easeIn(duration: 0.15)) {
                 iconOpacity = 1.0
             }
-            rotationAngle = 0  // 重置旋转角度
         }
     }
 }
