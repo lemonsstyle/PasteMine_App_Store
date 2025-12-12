@@ -36,6 +36,7 @@ class ProEntitlementManager: ObservableObject {
     private let keyProPurchased = "PasteMine_ProPurchased"
     private let keyTrialStartDate = "PasteMine_TrialStartDate"
     private let keyTrialUsedOnce = "PasteMine_TrialUsedOnce"
+    private let keyTrialExpiredNotified = "PasteMine_TrialExpiredNotified"  // 新增：记录是否已通知试用到期
     
     // MARK: - Computed Properties
     
@@ -77,15 +78,31 @@ class ProEntitlementManager: ObservableObject {
         // 2. 检查试用状态
         if let trialStartDate = UserDefaults.standard.object(forKey: keyTrialStartDate) as? Date {
             let elapsed = Calendar.current.dateComponents([.day], from: trialStartDate, to: Date()).day ?? 0
-            
+
             if elapsed >= 7 {
                 // 试用已过期
                 state = .trialExpired
                 print("⏰ Pro 状态: 试用已过期")
-                
-                // 如果之前是试用中，现在过期了，需要弹出面板
-                if case .trialActive = previousState {
+
+                // 🔧 Bug Fix 2: 试用到期时自动关闭图片预览
+                var settings = AppSettings.load()
+                if settings.imagePreviewEnabled {
+                    settings.imagePreviewEnabled = false
+                    settings.save()
+                    print("🔧 已自动关闭图片预览功能（试用到期）")
+                }
+
+                // 🔧 Bug Fix 3: 持久化试用到期通知标志
+                let hasNotified = UserDefaults.standard.bool(forKey: keyTrialExpiredNotified)
+                if !hasNotified {
+                    // 如果还没有通知过，设置标志并触发通知
                     shouldShowProSheetBecauseTrialExpired = true
+                    UserDefaults.standard.set(true, forKey: keyTrialExpiredNotified)
+                    print("🔔 设置试用到期提醒标志")
+                } else if case .trialActive = previousState {
+                    // 如果之前是试用中，现在刚过期（即使已经通知过），也要再次提醒
+                    shouldShowProSheetBecauseTrialExpired = true
+                    print("🔔 试用刚过期，再次提醒用户")
                 }
             } else {
                 // 试用中

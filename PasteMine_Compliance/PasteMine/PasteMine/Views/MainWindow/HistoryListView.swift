@@ -290,8 +290,8 @@ struct HistoryListView: View {
     private func togglePin(_ item: ClipboardItem) {
         // 如果要固定项目，检查 Pro 权限
         if !item.isPinned {
-            // 统计当前已固定数量
-            let pinnedCount = items.filter { $0.isPinned }.count
+            // 🔧 Bug Fix 4: 优化固定条数统计 - 使用 lazy filter 避免创建中间数组
+            let pinnedCount = items.lazy.filter { $0.isPinned }.count
 
             // 免费版只能固定 2 条
             if !proManager.isProFeatureEnabled && pinnedCount >= 2 {

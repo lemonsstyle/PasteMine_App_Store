@@ -175,7 +175,7 @@ enum AppText {
             static var hoverPreviewDesc: String { t("将鼠标停在图片记录上，无需打开即可查看原图细节。", "Hover over images to preview full details without opening.") }
             
             static var sourceTagsTitle: String { t("来源分类", "Source Tags") }
-            static var sourceTagsDesc: String { t("为复制内容添加 Chrome / 微信 / 代码 等标签，后续查找更快、更有条理。", "Tag content by source (Chrome, WeChat, etc.) for faster, organized search.") }
+            static var sourceTagsDesc: String { t("为复制内容添加 浏览器 / 微信 / 备忘录等分类，查找复制更有条理。", "Categorize content by Browser / WeChat / Notes for more organized search.") }
             
             static var unlimitedPinsTitle: String { t("无限固定", "Unlimited Pins") }
             static var unlimitedPinsDesc: String { t("免费版最多固定 2 条，Pro 可固定任意数量的重要记录。", "Free: 2 pins. Pro: unlimited important items.") }

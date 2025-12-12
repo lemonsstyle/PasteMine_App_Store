@@ -174,7 +174,7 @@ struct SearchBarView: View {
         // 否则显示完整弹窗
         let alert = NSAlert()
         alert.messageText = L10n.text("升级到 Pro 解锁来源分类", "Upgrade to Pro to unlock source filtering")
-        alert.informativeText = L10n.text("为复制内容添加 Chrome / 微信 / 备忘录等标签，便捷查找复制。", "Add tags like Chrome / WeChat / Notes to your clipboard items for quick search and retrieval.")
+        alert.informativeText = L10n.text("为复制内容添加 浏览器 / 微信 / 备忘录等分类，查找复制更有条理。", "Categorize content by Browser / WeChat / Notes for more organized search.")
         alert.alertStyle = .informational
         alert.addButton(withTitle: AppText.Pro.upgradeToPro)
         alert.addButton(withTitle: AppText.Common.cancel)
