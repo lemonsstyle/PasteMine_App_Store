@@ -62,3 +62,13 @@ dmg_contents/
 *.dmg
 *.app
 
+# IDE 和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
