@@ -288,26 +288,7 @@ struct HistoryListView: View {
     }
 
     private func togglePin(_ item: ClipboardItem) {
-        // 如果要固定项目，检查 Pro 权限
-        if !item.isPinned {
-            // 🔧 Bug Fix 4: 优化固定条数统计 - 使用 lazy filter 避免创建中间数组
-            let pinnedCount = items.lazy.filter { $0.isPinned }.count
-
-            // 免费版只能固定 2 条
-            if !proManager.isProFeatureEnabled && pinnedCount >= 2 {
-                // 检查是否隐藏提示
-                var settings = AppSettings.load()
-                if settings.hidePinLimitAlert {
-                    // 已隐藏弹窗，显示气泡提示和锁图标动画
-                    showPinLimitTooltip()
-                    triggerLockIconAnimation(for: item)
-                } else {
-                    // 显示升级弹窗
-                    showProUpgradeAlert()
-                }
-                return
-            }
-        }
+        // 🎉 所有用户都可以无限固定，无需检查限制
 
         withAnimation(.easeOut(duration: 0.2)) {
             item.isPinned.toggle()
@@ -433,9 +414,8 @@ struct HistoryListView: View {
     private func handleHoverPreview(for item: ClipboardItem, hovering: Bool) {
         previewWorkItem?.cancel()
 
-        // 只有 Pro 用户且开启了预览功能才显示
-        guard proManager.isProFeatureEnabled,
-              imagePreviewEnabled,
+        // 🎉 所有用户都可以使用图片预览功能（需开启设置）
+        guard imagePreviewEnabled,
               item.itemType == .image,
               let image = item.image else {
             ImagePreviewWindow.shared.hide()

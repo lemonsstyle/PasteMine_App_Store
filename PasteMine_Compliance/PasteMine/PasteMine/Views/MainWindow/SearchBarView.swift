@@ -97,12 +97,7 @@ struct SearchBarView: View {
                                 count: app.count,
                                 isSelected: selectedFilter == app,
                                 action: {
-                                    // 免费用户点击应用图标显示弹窗或气泡
-                                    if !proManager.isProFeatureEnabled {
-                                        showSourceFilterAlert()
-                                        return
-                                    }
-                                    // Pro 用户正常使用筛选功能
+                                    // 🎉 所有用户都可以使用来源筛选功能
                                     withAnimation(.smooth(duration: 0.2)) {
                                         selectedFilter = app
                                         showAllApps = false
@@ -140,12 +135,7 @@ struct SearchBarView: View {
                                 count: app.count,
                                 isSelected: selectedFilter == app,
                                 action: {
-                                    // 免费用户点击应用图标显示弹窗或气泡
-                                    if !proManager.isProFeatureEnabled {
-                                        showSourceFilterAlert()
-                                        return
-                                    }
-                                    // Pro 用户正常使用筛选功能
+                                    // 🎉 所有用户都可以使用来源筛选功能
                                     withAnimation(.smooth(duration: 0.2)) {
                                         selectedFilter = app
                                         showAllApps = false

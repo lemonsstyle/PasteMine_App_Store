@@ -167,19 +167,14 @@ class DatabaseService {
     /// 限制记录数量（根据设置中的数量上限）
     private func trimToLimit() throws {
         let settings = AppSettings.load()
-        
-        // 根据 Pro 状态决定使用哪个上限
-        let limit: Int
-        if ProEntitlementManager.shared.isProFeatureEnabled {
-            limit = settings.proMaxHistoryCount
-        } else {
-            limit = 50  // 免费版固定 50 条
-        }
-        
+
+        // 🎉 所有用户都可以使用完整历史记录功能
+        let limit = settings.proMaxHistoryCount  // 使用用户设置的上限（200/999）
+
         let request = ClipboardItem.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
         let items = try context.fetch(request)
-        
+
         if items.count > limit {
             // 删除超出限制的记录
             for item in items[limit...] {

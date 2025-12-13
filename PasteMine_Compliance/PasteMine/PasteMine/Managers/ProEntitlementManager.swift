@@ -39,15 +39,10 @@ class ProEntitlementManager: ObservableObject {
     private let keyTrialExpiredNotified = "PasteMine_TrialExpiredNotified"  // 新增：记录是否已通知试用到期
     
     // MARK: - Computed Properties
-    
-    /// Pro 功能是否可用
+
+    /// Pro 功能是否可用（所有用户免费使用，始终返回 true）
     var isProFeatureEnabled: Bool {
-        switch state {
-        case .purchased, .trialActive:
-            return true
-        case .free, .trialExpired:
-            return false
-        }
+        return true  // 🎉 所有功能免费开放
     }
     
     /// 是否已经使用过试用

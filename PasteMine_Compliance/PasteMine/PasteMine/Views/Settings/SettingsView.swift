@@ -68,8 +68,9 @@ struct SettingsView: View {
                     .foregroundStyle(.primary)
                 
                 Spacer()
-                
-                // Pro 入口按钮
+
+                // 🎉 Pro 功能已免费开放，隐藏 Pro 入口按钮
+                /*
                 Button(action: {
                     isShowingProSheet = true
                 }) {
@@ -85,6 +86,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .help(AppText.Pro.upgradeTooltip)
+                */
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
